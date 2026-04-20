@@ -1,4 +1,4 @@
-# Log Analyzer CLI
+README: updated
 
 [![PyPI Version](https://img.shields.io/pypi/v/log-analyzer-cli)](https://pypi.org/project/log-analyzer-cli/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/log-analyzer-cli)](https://pypi.org/project/log-analyzer-cli/)
@@ -8,7 +8,7 @@
 
 A production-ready **Python CLI tool** for analyzing log files, summarizing errors, warnings, and key metrics. Designed for DevOps, SRE, and developers who need to quickly understand what's happening in their log files.
 
-## Features
+README: updated# Features
 
 - **Multi-format Log Parsing**: Automatic detection and parsing of:
   - Syslog (RFC 3164/5424)
@@ -33,15 +33,15 @@ A production-ready **Python CLI tool** for analyzing log files, summarizing erro
   - Gzip compressed file support
   - Auto-detection of log format
 
-## Installation
+README: updated# Installation
 
-### From PyPI (Recommended)
+README: updated## From PyPI (Recommended)
 
 ```bash
 pip install log-analyzer-cli
 ```
 
-### From Source
+README: updated## From Source
 
 ```bash
 git clone https://github.com/hrachshah/log-analyzer-cli.git
@@ -49,13 +49,13 @@ cd log-analyzer-cli
 pip install -e .
 ```
 
-### Development Installation
+README: updated## Development Installation
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-## Quick Start
+README: updated# Quick Start
 
 Analyze a log file with default settings:
 
@@ -75,11 +75,11 @@ Filter by log level:
 log-analyzer-cli analyze /var/log/syslog -l ERROR,WARNING
 ```
 
-## Usage
+README: updated# Usage
 
-### Commands
+README: updated## Commands
 
-#### `analyze`
+README: updated### `analyze`
 
 Analyze a log file and summarize errors, warnings, and metrics.
 
@@ -103,26 +103,26 @@ log-analyzer-cli analyze [OPTIONS] FILE
 **Examples:**
 
 ```bash
-# Basic analysis
+README: updated
 log-analyzer-cli analyze /var/log/syslog
 
-# JSON output
+README: updated
 log-analyzer-cli analyze /var/log/app.log -o json
 
-# Filter errors and warnings only
+README: updated warnings only
 log-analyzer-cli analyze /var/log/app.log -l ERROR,WARNING
 
-# Search for specific pattern
+README: updated pattern
 log-analyzer-cli analyze /var/log/app.log -p "database.*failed"
 
-# Time-based filtering
+README: updated-based filtering
 log-analyzer-cli analyze /var/log/app.log --start-time "2025-03-20 10:00:00" --end-time "2025-03-20 12:00:00"
 
-# Verbose output with error details
+README: updated error details
 log-analyzer-cli analyze /var/log/app.log -v
 ```
 
-#### `formats`
+README: updated### `formats`
 
 List supported log formats.
 
@@ -130,9 +130,9 @@ List supported log formats.
 log-analyzer-cli formats
 ```
 
-### Examples
+README: updated## Examples
 
-#### Analyzing a Syslog File
+README: updated### Analyzing a Syslog File
 
 ```bash
 $ log-analyzer-cli analyze examples/syslog-sample.log
@@ -167,7 +167,7 @@ TOP ERROR GROUPS
 ============================================================
 ```
 
-#### Analyzing JSON Logs
+README: updated### Analyzing JSON Logs
 
 ```bash
 $ log-analyzer-cli analyze examples/app-json.log -o json
@@ -188,7 +188,7 @@ $ log-analyzer-cli analyze examples/app-json.log -o json
 }
 ```
 
-#### Analyzing Apache Access Logs
+README: updated### Analyzing Apache Access Logs
 
 ```bash
 $ log-analyzer-cli analyze examples/apache-sample.log -o table
@@ -203,9 +203,9 @@ $ log-analyzer-cli analyze examples/apache-sample.log -o table
 ...
 ```
 
-## Configuration
+README: updated# Configuration
 
-### Log Format Detection
+README: updated## Log Format Detection
 
 Log Analyzer CLI automatically detects the log format based on the content. You can also manually specify the format using the `--format` option:
 
@@ -215,58 +215,58 @@ Log Analyzer CLI automatically detects the log format based on the content. You 
 - `apache` - Apache/Nginx access logs
 - `generic` - Generic timestamp-based logs
 
-### Environment Variables
+README: updated## Environment Variables
 
 No environment variables are required. All configuration is done via command-line options.
 
-## Project Structure
+README: updated# Project Structure
 
 ```
 log-analyzer-cli/
-├── src/log_analyzer_cli/          # Main package
-│   ├── __init__.py               # Package initialization
-│   ├── cli.py                    # CLI entry point
-│   ├── analyzer.py               # Core analysis logic
-│   ├── utils.py                  # Utility functions
-│   ├── parsers/                  # Log format parsers
-│   │   ├── base.py              # Base parser class
-│   │   ├── syslog.py           # Syslog parser
-│   │   ├── json_log.py         # JSON log parser
-│   │   ├── apache.py           # Apache/Nginx parser
-│   │   └── generic.py          # Generic parser
-│   └── formatters/              # Output formatters
-│       ├── text.py              # Text formatter
-│       ├── json.py              # JSON formatter
-│       └── table.py             # Table formatter
-├── tests/                        # Test suite
+├── src/log_analyzer_cli/          README: updated
+│   ├── __init__.py               README: updated
+│   ├── cli.py                    README: updated
+│   ├── analyzer.py               README: updated
+│   ├── utils.py                  README: updated
+│   ├── parsers/                  README: updated
+│   │   ├── base.py              README: updated
+│   │   ├── syslog.py           README: updated
+│   │   ├── json_log.py         README: updated
+│   │   ├── apache.py           README: updated/Nginx parser
+│   │   └── generic.py          README: updated
+│   └── formatters/              README: updated
+│       ├── text.py              README: updated
+│       ├── json.py              README: updated
+│       └── table.py             README: updated
+├── tests/                        README: updated
 │   ├── test_parsers.py
 │   ├── test_analyzer.py
 │   └── test_cli.py
-├── examples/                      # Example log files
+├── examples/                      README: updated
 │   ├── syslog-sample.log
 │   ├── app-json.log
 │   ├── apache-sample.log
 │   ├── mixed.log
 │   └── error-heavy.log
-├── .github/                       # GitHub configuration
-│   ├── workflows/                # CI/CD workflows
-│   └── ISSUE_TEMPLATE/           # Issue templates
-├── pyproject.toml                # Package configuration
-├── README.md                      # This file
-├── CHANGELOG.md                   # Version history
-├── CONTRIBUTING.md                # Contribution guidelines
-├── LICENSE                        # MIT License
-└── SECURITY.md                   # Security policy
+├── .github/                       README: updated
+│   ├── workflows/                README: updated/CD workflows
+│   └── ISSUE_TEMPLATE/           README: updated
+├── pyproject.toml                README: updated
+├── README.md                      README: updated
+├── CHANGELOG.md                   README: updated
+├── CONTRIBUTING.md                README: updated
+├── LICENSE                        README: updated
+└── SECURITY.md                   README: updated
 ```
 
-## Development
+README: updated# Development
 
-### Requirements
+README: updated## Requirements
 
 - Python 3.10+
 - click>=8.0.0
 
-### Development Requirements
+README: updated## Development Requirements
 
 - pytest>=7.0.0
 - pytest-cov>=4.0.0
@@ -274,40 +274,40 @@ log-analyzer-cli/
 - mypy>=1.0.0
 - flake8>=6.0.0
 
-### Running Tests
+README: updated## Running Tests
 
 ```bash
 pytest tests/
 ```
 
-### Code Formatting
+README: updated## Code Formatting
 
 ```bash
 black src/ tests/
 ```
 
-### Type Checking
+README: updated## Type Checking
 
 ```bash
 mypy src/
 ```
 
-## Contributing
+README: updated# Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-## License
+README: updated# License
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Related Projects
+README: updated# Related Projects
 
 - [lnav](https://lnav.org/) - Advanced log file viewer
 - [goaccess](https://goaccess.io/) - Real-time web log analyzer
 - [flog](https://github.com/mingrammer/flog) - Fake log generator
 
-## Keywords
+README: updated# Keywords
 
 log analyzer, log parser, cli tool, syslog, json logs, apache logs, error analysis, log metrics, devops, sre, logging
 fix
-# Zo Bot Contribution
+README: updated

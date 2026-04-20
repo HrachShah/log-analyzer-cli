@@ -2,7 +2,7 @@ README: updated
 
 [![PyPI Version](https://img.shields.io/pypi/v/log-analyzer-cli)](https://pypi.org/project/log-analyzer-cli/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/log-analyzer-cli)](https://pypi.org/project/log-analyzer-cli/)
-[![Build Status](https://github.com/hrachshah/log-analyzer-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/hrachshah/log-analyzer-cli/actions)
+[![Build Status](https://github.com/HrachShah/log-analyzer-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/HrachShah/log-analyzer-cli/actions)
 [![Test Coverage](https://codecov.io/gh/hrachshah/log-analyzer-cli/branch/main/graph/badge.svg)](https://codecov.io/gh/hrachshah/log-analyzer-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -44,7 +44,7 @@ pip install log-analyzer-cli
 README: updated## From Source
 
 ```bash
-git clone https://github.com/hrachshah/log-analyzer-cli.git
+git clone https://github.com/HrachShah/log-analyzer-cli.git
 cd log-analyzer-cli
 pip install -e .
 ```

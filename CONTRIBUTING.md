@@ -150,3 +150,16 @@ By contributing to Log Analyzer CLI, you agree that your contributions will be l
 - **Discussions**: For questions and general discussion
 
 We appreciate all contributions, from bug reports to new features!
+
+## Troubleshooting
+
+### Common Issues
+
+**Q: Large files cause memory issues?**
+A: Use streaming mode with `--stream` flag for files over 100MB.
+
+**Q: Log format not detected?**
+A: Manually specify format with `--format json|syslog|apache|generic`.
+
+**Q: Gzip compressed files not reading?**
+A: Ensure `.gz` extension is present; auto-detection handles gzip.

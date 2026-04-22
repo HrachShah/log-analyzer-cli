@@ -57,4 +57,7 @@ def get_parser_for_format(format_name: str) -> type[LogParser] | None:
         "apache": ApacheParser,
         "generic": GenericParser,
     }
-    return format_map.get(format_name.lower())
+    parser_cls = format_map.get(format_name.lower())
+    if parser_cls is None:
+        raise ValueError(f"Unknown log format: '{format_name}'. Choose from: {', '.join(format_map.keys())}")
+    return parser_cls

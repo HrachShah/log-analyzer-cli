@@ -95,12 +95,12 @@ def analyze(
         if levels:
             level_filter = [l.strip().upper() for l in levels.split(",")]
         
-        from datetime import datetime
+        from datetime import datetime, timezone
         
         start_dt = None
         if start_time:
             try:
-                start_dt = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+                start_dt = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid start-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
@@ -108,7 +108,7 @@ def analyze(
         end_dt = None
         if end_time:
             try:
-                end_dt = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+                end_dt = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid end-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)

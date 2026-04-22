@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from log_analyzer_cli.analyzer import AnalysisResult
@@ -56,9 +56,22 @@ def _result_to_dict(result: AnalysisResult) -> dict[str, Any]:
         output["error_groups"].append(error_group)
     
     if result.time_distribution and result.time_distribution.entries:
+        try:
+            start = min(result.time_distribution.entries)
+            end = max(result.time_distribution.entries)
+        except TypeError:
+            # Mixed naive and aware datetimes — normalize all to UTC for comparison
+            normalized = []
+            for ts in result.time_distribution.entries:
+                if ts.tzinfo is None:
+                    normalized.append(ts.replace(tzinfo=timezone.utc))
+                else:
+                    normalized.append(ts)
+            start = min(normalized)
+            end = max(normalized)
         output["time_range"] = {
-            "start": min(result.time_distribution.entries).isoformat(),
-            "end": max(result.time_distribution.entries).isoformat(),
+            "start": start.isoformat(),
+            "end": end.isoformat(),
             "total_entries": len(result.time_distribution.entries),
         }
     

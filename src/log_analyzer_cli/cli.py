@@ -212,9 +212,14 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
+        # Replace timezone info on parsed timestamps so they can be compared
+        # with the naive datetimes produced by strptime (user input has no tz).
+        ts_for_compare = timestamp
+        if timestamp.tzinfo is not None:
+            ts_for_compare = timestamp.replace(tzinfo=None)
+        if start_time and ts_for_compare and ts_for_compare < start_time:
             continue
-        if end_time and timestamp and timestamp > end_time:
+        if end_time and ts_for_compare and ts_for_compare > end_time:
             continue
         
         parsed = parser.parse(line)

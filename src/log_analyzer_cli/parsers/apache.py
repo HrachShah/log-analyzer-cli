@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
@@ -115,7 +115,8 @@ class ApacheParser(LogParser):
         
         try:
             ts_str_naive = ts_str.split()[0]
-            return datetime.strptime(ts_str_naive, "%d/%b/%Y:%H:%M:%S")
+            dt = datetime.strptime(ts_str_naive, "%d/%b/%Y:%H:%M:%S")
+            return dt.replace(tzinfo=timezone.utc)
         except ValueError:
             pass
         

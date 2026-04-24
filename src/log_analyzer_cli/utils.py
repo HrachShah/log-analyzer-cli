@@ -100,9 +100,8 @@ def normalize_error_pattern(error_msg: str) -> str:
     pattern = re.sub(r'\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(local|com|net|org|io|dev)\b', '<HOST>', pattern)
     pattern = re.sub(r'\blocalhost\b', '<HOST>', pattern)
     
-    # Replace paths before processing ports, so port patterns embedded in
-    # paths (e.g. "/home/user:8080/app") are captured as <PATH> not :<PORT>.
-    pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
+    # Replace paths - only match strings that look like file paths (start with /)
+    pattern = re.sub(r'/[\w./\-:]+', '<PATH>', pattern)
     
     # Protect any :<PORT> that already appears in the pattern — these are
     # ports that were captured as part of a path replacement and must not be

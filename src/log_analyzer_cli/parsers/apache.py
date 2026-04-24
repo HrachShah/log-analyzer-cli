@@ -24,7 +24,7 @@ class ApacheParser(LogParser):
     COMBINED_PATTERN = re.compile(
         r'^(?P<host>\S+)\s+'
         r'(?P<ident>\S+)\s+'
-        r'(?P<user>\s+)'
+        r'(?P<user>\S+)\s+'
         r'\[(?P<timestamp>[^\]]+)\]\s+'
         r'"(?P<request>[^"]+)"\s+'
         r'(?P<status>\d{3})\s+'

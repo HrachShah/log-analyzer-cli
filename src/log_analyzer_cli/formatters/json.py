@@ -56,11 +56,14 @@ def _result_to_dict(result: AnalysisResult) -> dict[str, Any]:
         output["error_groups"].append(error_group)
     
     if result.time_distribution and result.time_distribution.entries:
-        output["time_range"] = {
-            "start": min(result.time_distribution.entries).isoformat(),
-            "end": max(result.time_distribution.entries).isoformat(),
-            "total_entries": len(result.time_distribution.entries),
-        }
+        try:
+            output["time_range"] = {
+                "start": min(result.time_distribution.entries).isoformat(),
+                "end": max(result.time_distribution.entries).isoformat(),
+                "total_entries": len(result.time_distribution.entries),
+            }
+        except ValueError:
+            pass
     
     if result.warnings:
         output["warnings"] = result.warnings

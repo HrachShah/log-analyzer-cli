@@ -108,8 +108,9 @@ def normalize_error_pattern(error_msg: str) -> str:
     # re-processed by the generic port replacer below.
     pattern = pattern.replace(':<PORT>', '<PROTECTED_PORT>')
     
-    # Replace remaining standalone port numbers
-    pattern = re.sub(r':\d+', ':<PORT>', pattern)
+    # Replace remaining standalone port numbers — require the colon to be
+    # preceded by a digit (4-tuple IP:port) or an angle bracket (<PORT>).
+    pattern = re.sub(r'(?<=[\d>])\b:\d+\b', ':<PORT>', pattern)
     
     # Restore protected ports
     pattern = pattern.replace('<PROTECTED_PORT>', ':<PORT>')

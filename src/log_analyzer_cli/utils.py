@@ -100,14 +100,16 @@ def normalize_error_pattern(error_msg: str) -> str:
     pattern = re.sub(r'\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(local|com|net|org|io|dev)\b', '<HOST>', pattern)
     pattern = re.sub(r'\blocalhost\b', '<HOST>', pattern)
     
-    # Replace port numbers (after IP and host replacement)
-    pattern = re.sub(r':\d+', ':<PORT>', pattern)
+    # Replace paths before port normalization so colons in paths are preserved
+    pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
+    
+    # Replace port numbers — only when preceded by ':' (raw host:port) or
+    # '>' (protected <HOST>:port placeholder) to avoid consuming colons
+    # that are part of path segments like /api:v1/users
+    pattern = re.sub(r'(?<=[:<])\d+\b', '<PORT>', pattern)
     
     # Replace UUIDs
     pattern = re.sub(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', '<UUID>', pattern)
-    
-    # Replace paths
-    pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
     
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)

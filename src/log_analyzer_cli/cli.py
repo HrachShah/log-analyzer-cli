@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -194,7 +195,6 @@ def _parse_file(
     
     from log_analyzer_cli.parsers import ParsedEntry
     from log_analyzer_cli.utils import detect_log_level, parse_timestamp
-    import re
     
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
     

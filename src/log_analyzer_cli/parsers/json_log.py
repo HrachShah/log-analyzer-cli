@@ -104,9 +104,8 @@ class JSONLogParser(LogParser):
             except ValueError:
                 continue
         
-        ts_str_clean = re.sub(r'\.\d+Z$', '+00:00', ts_str)
         try:
-            return datetime.fromisoformat(ts_str_clean.replace("Z", "+00:00"))
+            return datetime.fromisoformat(ts_str)
         except ValueError:
             pass
         

@@ -94,7 +94,7 @@ class GenericParser(LogParser):
                 continue
         
         try:
-            return datetime.fromisoformat(ts_str_normalized.replace("Z", "+00:00"))
+            return datetime.fromisoformat(ts_str_normalized)
         except ValueError:
             pass
         

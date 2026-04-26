@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
@@ -71,14 +71,19 @@ class JSONLogParser(LogParser):
         )
     
     def _extract_timestamp(self, data: dict) -> Optional[datetime]:
-        """Extract timestamp from JSON data."""
+        """Extract timestamp from JSON data.
+        
+        Always returns a UTC-aware datetime for numeric Unix timestamps,
+        enabling reliable comparison even when mixed with other UTC-aware
+        timestamps from string parsing.
+        """
         for field in self.TIMESTAMP_FIELDS:
             if field in data:
                 value = data[field]
                 if isinstance(value, (int, float)):
                     if value > 1e12:
-                        return datetime.fromtimestamp(value / 1000)
-                    return datetime.fromtimestamp(value)
+                        return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+                    return datetime.fromtimestamp(value, tz=timezone.utc)
                 if isinstance(value, str):
                     return self._parse_timestamp_string(value)
         return None

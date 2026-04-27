@@ -1,0 +1,6 @@
+127.0.0.1 - frank [10/Oct/2026:13:55:36 -0700] "GET /apache_pb.gif HTTP/1.0" 200 2326
+127.0.0.1 - - [10/Oct/2026:13:55:36 -0700] "GET /images/p.jpg HTTP/1.0" 404 335
+127.0.0.1 - admin [10/Oct/2026:13:55:46 -0700] "POST /api/login HTTP/1.0" 200 112
+192.168.1.1 - user1 [10/Oct/2026:14:02:15 -0700] "GET /index.html HTTP/1.0" 200 1542
+192.168.1.1 - - [10/Oct/2026:14:02:45 -0700] "GET /static/app.js HTTP/1.0" 304 0
+10.0.0.5 - root [10/Oct/2026:14:05:10 -0700] "POST /admin/upload HTTP/1.0" 500 512

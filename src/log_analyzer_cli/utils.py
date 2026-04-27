@@ -100,14 +100,23 @@ def normalize_error_pattern(error_msg: str) -> str:
     pattern = re.sub(r'\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(local|com|net|org|io|dev)\b', '<HOST>', pattern)
     pattern = re.sub(r'\blocalhost\b', '<HOST>', pattern)
     
-    # Replace port numbers (after IP and host replacement)
-    pattern = re.sub(r':\d+', ':<PORT>', pattern)
+    # Replace paths - only match strings that look like file paths (start with /)
+    pattern = re.sub(r'/[\w./\-:]+', '<PATH>', pattern)
+    
+    # Protect any :<PORT> that already appears in the pattern — these are
+    # ports that were captured as part of a path replacement and must not be
+    # re-processed by the generic port replacer below.
+    pattern = pattern.replace(':<PORT>', '<PROTECTED_PORT>')
+    
+    # Replace remaining standalone port numbers — require the colon to be
+    # preceded by a digit (4-tuple IP:port) or an angle bracket (<PORT>).
+    pattern = re.sub(r'(?<=[\d>])\b:\d+\b', ':<PORT>', pattern)
+    
+    # Restore protected ports
+    pattern = pattern.replace('<PROTECTED_PORT>', ':<PORT>')
     
     # Replace UUIDs
     pattern = re.sub(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', '<UUID>', pattern)
-    
-    # Replace paths
-    pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
     
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)

@@ -95,12 +95,12 @@ def analyze(
         if levels:
             level_filter = [l.strip().upper() for l in levels.split(",")]
         
-        from datetime import datetime
+        from datetime import datetime, timezone
         
         start_dt = None
         if start_time:
             try:
-                start_dt = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+                start_dt = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid start-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
@@ -108,7 +108,7 @@ def analyze(
         end_dt = None
         if end_time:
             try:
-                end_dt = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+                end_dt = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid end-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
@@ -192,6 +192,7 @@ def _parse_file(
     """Parse log file with optional filtering."""
     entries = []
     
+    import datetime
     from log_analyzer_cli.parsers import ParsedEntry
     from log_analyzer_cli.utils import detect_log_level, parse_timestamp
     import re
@@ -212,6 +213,11 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
+        # Normalize to UTC-aware datetime for consistent comparisons.
+        # If the timestamp is naive (no timezone), attach UTC so it can be
+        # compared against the UTC-aware start_time / end_time boundaries.
+        if timestamp and timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=datetime.timezone.utc)
         if start_time and timestamp and timestamp < start_time:
             continue
         if end_time and timestamp and timestamp > end_time:

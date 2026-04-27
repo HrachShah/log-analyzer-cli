@@ -142,3 +142,8 @@ cython_debug/
 # OS
 .DS_Store
 Thumbs.db
+# Keep test fixtures in examples/ unignored:
+# First, un-ignore the examples/ directory
+!examples/
+# Then re-ignore *.log files inside it (they would otherwise be unignored too)
+examples/*.log

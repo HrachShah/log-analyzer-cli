@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Optional
+from datetime import timezone
 
 import click
 
@@ -101,6 +102,7 @@ def analyze(
         if start_time:
             try:
                 start_dt = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+                start_dt = start_dt.replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid start-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
@@ -109,6 +111,7 @@ def analyze(
         if end_time:
             try:
                 end_dt = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+                end_dt = end_dt.replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid end-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)

@@ -1,0 +1,10 @@
+2025-04-20T10:30:00.123Z INFO Server started on port 8080
+Apr 20 10:30:05 server nginx[8901]: 404 GET /nonexistent HTTP/1.1 - CCBot/2.0
+{"timestamp": "2025-04-20T10:30:10Z", "level": "WARNING", "message": "High memory usage: 85%"}
+192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "-" "Mozilla/5.0"
+2025-04-20T10:30:15Z ERROR Failed to process request: timeout
+Apr 20 10:30:20 server myapp[2345]: ERROR: Database connection timeout after 30s
+2025-04-20T10:30:25Z WARNING Slow query detected: 2.3s
+10.0.0.5 - - [20/Mar/2025:10:15:34 +0000] "POST /api/users HTTP/1.1" 201 87 "-" "curl/7.68.0"
+2025-04-20T10:30:30Z CRITICAL Database unreachable
+Apr 20 10:30:35 server CRON[9012]: (root) CMD (/usr/local/bin/backup.sh)

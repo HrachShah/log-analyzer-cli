@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from log_analyzer_cli.analyzer import AnalysisResult, ErrorGroup, TimeDistribution
+from log_analyzer_cli.analyzer import AnalysisResult, TimeDistribution
 
 
 def format_text(result: AnalysisResult, verbose: bool = False) -> str:

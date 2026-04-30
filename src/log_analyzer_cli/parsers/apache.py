@@ -80,9 +80,12 @@ class ApacheParser(LogParser):
         else:
             level = "UNKNOWN"
         
+        raw_user = groups.get("user", "")
+        user = raw_user.strip() if raw_user.strip() not in ("", "-") else ""
+
         metadata = {
             "host": groups.get("host", ""),
-            "user": groups.get("user", ""),
+            "user": user,
             "request": groups.get("request", ""),
             "status": status,
             "size": groups.get("size", ""),

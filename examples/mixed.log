@@ -1,0 +1,5 @@
+2025-03-20T10:15:32.123Z INFO Application started on port 8080
+Mar 20 10:16:01 server001 systemd[1]: Started daily service
+{"timestamp": "2025-03-20T10:17:30.789Z", "level": "WARN", "message": "High memory usage detected"}
+192.168.1.10 - - [20/Mar/2025:10:18:00 +0000] "GET /health HTTP/1.1" 200 15 "-" "ping"
+2025-03-20 10:19:15 ERROR Failed to process request: timeout after 30s

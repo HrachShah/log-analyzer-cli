@@ -1,0 +1,6 @@
+Mar 20 10:15:32 server001 sshd[12345]: Accepted publickey for ubuntu from 192.168.1.100 port 52311
+Mar 20 10:16:01 server001 systemd[1]: Started Session 42 of user ubuntu
+Mar 20 10:17:15 server002 kernel: [12345.678901] CPU0: Package temperature above threshold
+Mar 20 10:18:00 server001 CRON[23456]: pam_unix(cron:session): session opened for user root
+Mar 20 10:18:01 server001 CRON[23456]: pam_unix(cron:session): session closed for user root
+Mar 20 10:19:22 server003 nginx: 2026/03/20 10:19:22 [error] 7890#0: *1234 connect() failed

@@ -1,0 +1,6 @@
+{"timestamp": "2025-03-20T10:15:32.123Z", "level": "INFO", "message": "Application started successfully"}
+{"timestamp": "2025-03-20T10:16:00.456Z", "level": "DEBUG", "message": "Database connection established"}
+{"timestamp": "2025-03-20T10:17:30.789Z", "level": "WARNING", "message": "Cache miss for key: user_session_12345"}
+{"timestamp": "2025-03-20T10:18:15.012Z", "level": "ERROR", "message": "Failed to connect to database: connection refused"}
+{"timestamp": "2025-03-20T10:19:00.345Z", "level": "INFO", "message": "Request processed in 45ms"}
+{"timestamp": "2025-03-20T10:20:00.000Z", "level": "CRITICAL", "message": "Memory usage exceeded threshold: 95%"}

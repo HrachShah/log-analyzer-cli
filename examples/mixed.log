@@ -1,0 +1,8 @@
+2026-04-20T10:30:00Z INFO Server started on port 8080
+2026-04-20T10:30:05Z DEBUG Incoming request from 192.168.1.50
+192.168.1.10 - - [20/Apr/2026:10:30:10 +0000] "GET /index.html HTTP/1.1" 200 2326 "-" "Mozilla/5.0"
+2026-04-20T10:30:15Z WARNING High memory usage: 85%
+2026-04-20T10:30:20Z INFO Health check passed
+192.168.1.10 - admin [20/Apr/2026:10:30:25 +0000] "POST /api/data HTTP/1.1" 200 512 "-" "curl/7.68.0"
+2026-04-20T10:30:30Z ERROR Connection pool exhausted
+2026-04-20T10:30:35Z CRITICAL Database unreachable

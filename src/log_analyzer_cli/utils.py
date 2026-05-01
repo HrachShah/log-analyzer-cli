@@ -130,7 +130,7 @@ def detect_log_level(line: str) -> str:
     line_upper = line.upper()
     
     level_patterns = [
-        (r'\bCRITICAL\b|\bCRIT\b', "CRITICAL"),
+        (r'\bCRITICAL\b|\bCRIT\b|\bFATAL\b', "CRITICAL"),
         (r'\bERROR\b|\bERR\b', "ERROR"),
         (r'\bWARNING\b|\bWARN\b', "WARNING"),
         (r'\bINFO\b', "INFO"),

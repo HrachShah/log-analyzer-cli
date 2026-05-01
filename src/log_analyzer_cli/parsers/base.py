@@ -66,9 +66,9 @@ class LogParser(ABC):
         
         entries = []
         for line in read_log_file(file_path):
-            line = line.rstrip("\n\r")
-            if line and self.can_parse(line):
-                entry = self.parse(line)
+            stripped = line.rstrip("\n\r")
+            if stripped and self.can_parse(stripped):
+                entry = self.parse(stripped)
                 if entry:
                     entries.append(entry)
         return entries

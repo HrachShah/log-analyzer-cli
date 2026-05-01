@@ -34,7 +34,7 @@ def _result_to_dict(result: AnalysisResult) -> dict[str, Any]:
             "parsed_entries": result.parsed_entries,
             "parse_errors": result.parse_errors,
         },
-        "level_counts": dict(result.level_counts),
+        "level_counts": {},
         "error_groups": [],
         "sources": dict(result.source_counts),
     }
@@ -64,5 +64,11 @@ def _result_to_dict(result: AnalysisResult) -> dict[str, Any]:
     
     if result.warnings:
         output["warnings"] = result.warnings
+    
+    for level, count in result.level_counts.items():
+        output["level_counts"][level] = {
+            "count": count,
+            "percentage": (count / result.parsed_entries * 100) if result.parsed_entries > 0 else 0,
+        }
     
     return output

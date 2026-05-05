@@ -52,23 +52,20 @@ class JSONLogParser(LogParser):
         """Parse a JSON log line."""
         try:
             data = json.loads(line.strip())
+            timestamp = self._extract_timestamp(data)
+            level = self._extract_level(data)
+            message = self._extract_message(data)
+            metadata = {k: v for k, v in data.items()
+                       if k not in self.TIMESTAMP_FIELDS + self.LEVEL_FIELDS + self.MESSAGE_FIELDS}
+            return ParsedEntry(
+                raw=line,
+                timestamp=timestamp,
+                level=level,
+                message=message,
+                metadata=metadata,
+            )
         except json.JSONDecodeError:
             return None
-        
-        timestamp = self._extract_timestamp(data)
-        level = self._extract_level(data)
-        message = self._extract_message(data)
-        
-        metadata = {k: v for k, v in data.items() 
-                   if k not in self.TIMESTAMP_FIELDS + self.LEVEL_FIELDS + self.MESSAGE_FIELDS}
-        
-        return ParsedEntry(
-            raw=line,
-            timestamp=timestamp,
-            level=level,
-            message=message,
-            metadata=metadata,
-        )
     
     def _extract_timestamp(self, data: dict) -> Optional[datetime]:
         """Extract timestamp from JSON data."""

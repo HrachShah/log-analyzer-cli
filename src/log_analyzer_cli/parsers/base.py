@@ -28,6 +28,7 @@ class LogParser(ABC):
     
     name: str = "base"
     description: str = "Base log parser"
+    last_parse_errors: int = 0
     
     @abstractmethod
     def can_parse(self, line: str) -> bool:
@@ -61,14 +62,27 @@ class LogParser(ABC):
             
         Returns:
             List of parsed entries.
+            
+        After this call, check `self.last_parse_errors` for the count of lines
+        that could not be parsed (either can_parse returned False or parse
+        raised an exception).
         """
         from log_analyzer_cli.utils import read_log_file
         
         entries = []
+        self.last_parse_errors = 0
         for line in read_log_file(file_path):
             stripped = line.rstrip("\n\r")
             if stripped and self.can_parse(stripped):
-                entry = self.parse(stripped)
+                try:
+                    entry = self.parse(stripped)
+                except Exception:
+                    entry = None
                 if entry:
                     entries.append(entry)
+                elif entry is None:
+                    # parse() returned None explicitly — malformed line for this parser
+                    self.last_parse_errors += 1
+            else:
+                self.last_parse_errors += 1
         return entries

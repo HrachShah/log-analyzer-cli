@@ -70,13 +70,16 @@ class ApacheParser(LogParser):
         
         status = groups.get("status", "")
         if status:
-            status_int = int(status)
-            if status_int >= 500:
-                level = "ERROR"
-            elif status_int >= 400:
-                level = "WARNING"
-            else:
-                level = "INFO"
+            try:
+                status_int = int(status)
+                if status_int >= 500:
+                    level = "ERROR"
+                elif status_int >= 400:
+                    level = "WARNING"
+                else:
+                    level = "INFO"
+            except ValueError:
+                level = "UNKNOWN"
         else:
             level = "UNKNOWN"
         

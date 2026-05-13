@@ -121,13 +121,13 @@ def analyze(
         
         click.echo(f"Using parser: {parser.name}")
         
-        entries = _parse_file(parser, file, level_filter, pattern, start_dt, end_dt)
+        entries, total_lines = _parse_file(parser, file, level_filter, pattern, start_dt, end_dt)
         
-        if not entries:
+        if not entries and total_lines == 0:
             click.echo("No log entries found matching criteria", err=True)
             sys.exit(0)
         
-        result = analyze_log_entries(entries, group_errors=not no_group)
+        result = analyze_log_entries(entries, group_errors=not no_group, total_lines=total_lines)
         
         output_str = format_output(result, output, verbose)
         
@@ -165,7 +165,7 @@ def _get_parser(format_name: str, file_path: Path):
                 line = line.strip()
                 if line:
                     sample_lines.append(line)
-    except Exception as e:
+    except OSError as e:
         click.echo(f"Warning: Could not read file: {e}", err=True)
         return None
     
@@ -221,7 +221,7 @@ def _parse_file(
         if parsed:
             entries.append(parsed)
     
-    return entries
+    return entries, len(entries)
 
 
 if __name__ == "__main__":

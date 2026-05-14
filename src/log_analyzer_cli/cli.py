@@ -133,7 +133,7 @@ def analyze(
         
         click.echo(output_str)
         
-    except Exception as e:
+    except (OSError, ValueError, TypeError) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 

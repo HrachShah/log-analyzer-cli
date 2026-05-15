@@ -133,7 +133,9 @@ def analyze(
         
         click.echo(output_str)
         
-    except Exception as e:
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except (OSError, ValueError, RuntimeError) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
@@ -165,7 +167,7 @@ def _get_parser(format_name: str, file_path: Path):
                 line = line.strip()
                 if line:
                     sample_lines.append(line)
-    except Exception as e:
+    except OSError as e:
         click.echo(f"Warning: Could not read file: {e}", err=True)
         return None
     

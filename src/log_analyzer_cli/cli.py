@@ -121,13 +121,17 @@ def analyze(
         
         click.echo(f"Using parser: {parser.name}")
         
-        entries = _parse_file(parser, file, level_filter, pattern, start_dt, end_dt)
+        total_lines_out = [0]
+        parse_errors_out = [0]
+        entries = _parse_file(parser, file, level_filter, pattern, start_dt, end_dt, total_lines_out, parse_errors_out)
         
         if not entries:
             click.echo("No log entries found matching criteria", err=True)
             sys.exit(0)
         
         result = analyze_log_entries(entries, group_errors=not no_group)
+        result.total_lines = total_lines_out[0]
+        result.parse_errors = parse_errors_out[0]
         
         output_str = format_output(result, output, verbose)
         
@@ -151,23 +155,28 @@ def list_formats() -> None:
         click.echo(f"  {parser.name:10} - {parser.description}")
 
 
-def _get_parser(format_name: str, file_path: Path):
+def _get_parser(format_name: str, file_path: Path, total_lines_out: Optional[list[int]] = None, parse_errors_out: Optional[list[int]] = None):
     """Get appropriate parser for the log file."""
     if format_name != "auto":
         return get_parser_for_format(format_name)()
     
     sample_lines = []
+    total_lines = 0
     try:
         with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-            for i, line in enumerate(f):
-                if i >= 10:
-                    break
+            for line in f:
+                total_lines += 1
                 line = line.strip()
                 if line:
                     sample_lines.append(line)
+                if total_lines >= 10:
+                    break
     except OSError as e:
         click.echo(f"Warning: Could not read file: {e}", err=True)
         return None
+    
+    if total_lines_out is not None:
+        total_lines_out[0] = total_lines
     
     if not sample_lines:
         return None
@@ -188,9 +197,12 @@ def _parse_file(
     search_pattern: Optional[str] = None,
     start_time: Optional[datetime] = None,
     end_time: Optional[datetime] = None,
+    total_lines_out: Optional[list[int]] = None,
+    parse_errors_out: Optional[list[int]] = None,
 ):
     """Parse log file with optional filtering."""
     entries = []
+    parse_errors = 0
     
     from log_analyzer_cli.parsers import ParsedEntry
     from log_analyzer_cli.utils import detect_log_level, parse_timestamp
@@ -220,6 +232,13 @@ def _parse_file(
         parsed = parser.parse(line)
         if parsed:
             entries.append(parsed)
+        else:
+            parse_errors += 1
+    
+    if total_lines_out is not None:
+        total_lines_out[0] = len(entries) + parse_errors
+    if parse_errors_out is not None:
+        parse_errors_out[0] = parse_errors
     
     return entries
 

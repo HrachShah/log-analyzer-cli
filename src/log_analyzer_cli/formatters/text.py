@@ -104,8 +104,11 @@ def _calculate_time_intervals(dist: TimeDistribution) -> list[tuple[str, int]]:
     interval = dist.interval_minutes
     
     for ts in dist.entries:
-        minute_bucket = ts.minute // interval * interval
-        key = f"{ts.strftime('%Y-%m-%d %H:')}{minute_bucket:02d}"
+        # Truncate to the start of the interval bucket, then format
+        minute_in_hour = ts.minute
+        bucket_minute = (minute_in_hour // interval) * interval
+        hour_bucket = ts.hour
+        key = f"{ts.strftime('%Y-%m-%d ')}{hour_bucket:02d}:{bucket_minute:02d}"
         intervals[key] = intervals.get(key, 0) + 1
     
     return sorted(intervals.items(), key=lambda x: x[0])

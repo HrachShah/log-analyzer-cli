@@ -18,6 +18,7 @@ from log_analyzer_cli.parsers import (
     ApacheParser,
     get_all_parsers,
     get_parser_for_format,
+    auto_detect_parser,
 )
 from log_analyzer_cli.utils import read_log_file
 
@@ -174,12 +175,11 @@ def _get_parser(format_name: str, file_path: Path):
     if not sample_lines:
         return None
     
-    for parser_class in get_all_parsers():
-        parser = parser_class()
-        for line in sample_lines[:5]:
-            if parser.can_parse(line):
-                return parser
-    
+    for line in sample_lines:
+        parser_class = auto_detect_parser(line)
+        if parser_class:
+            return parser_class()
+
     return GenericParser()
 
 

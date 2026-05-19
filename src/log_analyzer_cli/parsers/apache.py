@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
+from log_analyzer_cli.utils import detect_log_level
 
 
 class ApacheParser(LogParser):
@@ -68,23 +69,26 @@ class ApacheParser(LogParser):
         
         timestamp = self._parse_timestamp(groups.get("timestamp", ""))
         
-        status = groups.get("status", "")
-        if status:
-            status_int = int(status)
-            if status_int >= 500:
-                level = "ERROR"
-            elif status_int >= 400:
-                level = "WARNING"
-            else:
-                level = "INFO"
+        status_str = groups.get("status", "")
+        if status_str:
+            try:
+                status_int = int(status_str)
+                if status_int >= 500:
+                    level = "ERROR"
+                elif status_int >= 400:
+                    level = "WARNING"
+                else:
+                    level = "INFO"
+            except ValueError:
+                level = detect_log_level(groups.get("request", ""))
         else:
-            level = "UNKNOWN"
+            level = detect_log_level(groups.get("request", ""))
         
         metadata = {
             "host": groups.get("host", ""),
             "user": groups.get("user", ""),
             "request": groups.get("request", ""),
-            "status": status,
+            "status": status_str,
             "size": groups.get("size", ""),
         }
         
@@ -93,7 +97,7 @@ class ApacheParser(LogParser):
         if groups.get("user_agent"):
             metadata["user_agent"] = groups["user_agent"]
         
-        message = f"{groups.get('request', '')} - Status: {status}"
+        message = f"{groups.get('request', '')} - Status: {status_str}"
         
         return ParsedEntry(
             raw=line,

@@ -135,4 +135,7 @@ class JSONLogParser(LogParser):
         for field in self.MESSAGE_FIELDS:
             if field in data:
                 return str(data[field])
-        return str(data)
+        # Fall back to a human-readable encoding of remaining fields,
+        # not repr(data) which would return Python dict syntax like
+        # "{'foo': 'bar'}" instead of something readable
+        return " | ".join(f"{k}={v}" for k, v in data.items())

@@ -91,7 +91,7 @@ def normalize_error_pattern(error_msg: str) -> str:
     pattern = error_msg
     
     # Replace IP:port combinations first
-    pattern = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+', '<IP>', pattern)
+    pattern = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+', '<IP>:<PORT>', pattern)
     
     # Replace plain IP addresses
     pattern = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', '<IP>', pattern)

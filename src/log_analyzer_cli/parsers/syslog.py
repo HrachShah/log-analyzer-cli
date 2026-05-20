@@ -85,7 +85,6 @@ class SyslogParser(LogParser):
                 groups = match.groupdict()
                 
                 timestamp = self._parse_timestamp(groups.get("timestamp", ""))
-                level = detect_log_level(line)  # Check full line for level
                 
                 metadata = {}
                 if groups.get("host"):
@@ -94,10 +93,11 @@ class SyslogParser(LogParser):
                     metadata["process"] = groups["process"]
                     source = groups["process"]
                 else:
-                    # Use host as source when no process name
                     source = groups.get("host")
                 if groups.get("pid"):
                     metadata["pid"] = groups["pid"]
+                
+                level = detect_log_level(groups.get("message", ""))
                 
                 return ParsedEntry(
                     raw=line,

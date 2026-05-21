@@ -214,6 +214,8 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
+        if timestamp and timestamp.tzinfo is not None:
+            timestamp = timestamp.replace(tzinfo=None) - timestamp.utcoffset()
         if start_time and timestamp and timestamp < start_time:
             continue
         if end_time and timestamp and timestamp > end_time:

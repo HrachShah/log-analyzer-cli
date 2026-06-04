@@ -95,7 +95,17 @@ def normalize_error_pattern(error_msg: str) -> str:
 
     # Replace IPv6 with zone ID and port (e.g. fe80::1%eth0:9000)
     pattern = re.sub(r'([0-9a-fA-F:]+)%[^:]+:\d+', '<IP>:<PORT>', pattern)
-    
+
+    # Replace bracketed IPv6 with port (e.g. [2001:db8::1]:443)
+    pattern = re.sub(r'\[[0-9a-fA-F:]+\]:\d+', '[<IP>]:<PORT>', pattern)
+
+    # Replace full-form IPv6 (8 groups, no compression): 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+    pattern = re.sub(r'\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b', '<IP>', pattern)
+
+    # Replace compressed IPv6 (with ::) - fe80::1, 2001:db8::1, ::1
+    # Must run before the standalone port regex or ':1' in 'fe80::1' gets turned into ':<PORT>'
+    pattern = re.sub(r'(?<![0-9a-fA-F:])[0-9a-fA-F:]*::[0-9a-fA-F:]*(?![0-9a-fA-F:])', '<IP>', pattern)
+
     # Replace plain IP addresses
     pattern = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', '<IP>', pattern)
     

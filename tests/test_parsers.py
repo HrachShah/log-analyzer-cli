@@ -179,3 +179,26 @@ class TestParserUtils:
     def test_get_parser_for_format_invalid(self):
         parser_class = get_parser_for_format("invalid_format")
         assert parser_class is None
+
+
+class TestApacheCombinedPatternExtraction:
+    """Tests that the COMBINED_PATTERN regex actually matches a real combined log
+    and properly extracts referer and user_agent fields.
+    """
+
+    def test_combined_pattern_extracts_referer(self):
+        parser = ApacheParser()
+        line = '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "https://example.com/" "Mozilla/5.0"'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.metadata.get("referer") == "https://example.com/"
+        assert entry.metadata.get("user_agent") == "Mozilla/5.0"
+
+    def test_combined_pattern_matches_with_dash_user(self):
+        parser = ApacheParser()
+        line = '10.0.0.1 - frank [20/Mar/2025:10:15:32 +0000] "GET /api HTTP/1.1" 200 100 "-" "curl/7.0"'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.metadata["user"] == "frank"
+        assert entry.metadata["referer"] == "-"
+        assert entry.metadata["user_agent"] == "curl/7.0"

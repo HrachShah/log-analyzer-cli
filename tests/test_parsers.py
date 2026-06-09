@@ -91,6 +91,53 @@ class TestJSONLogParser:
             assert entry is not None
             assert entry.level == "ERROR"
 
+    def test_parse_json_line_drops_only_timestamp_on_out_of_range_value(self):
+        # An out-of-range numeric timestamp (year > 9999) used to raise
+        # ValueError out of datetime.fromtimestamp and escape parse() entirely,
+        # dropping the whole JSON log line and surfacing a traceback to the
+        # CLI. The contract is that parse() returns None only when the JSON
+        # itself is unparseable; for a valid JSON line with a busted numeric
+        # timestamp, the entry should come back with timestamp=None.
+        parser = JSONLogParser()
+
+        # 1e15 seconds from epoch is year 33658, which is out of the
+        # datetime range.
+        line = '{"timestamp": 1e15, "level": "ERROR", "message": "huge ts"}'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+        assert entry.message == "huge ts"
+
+        # Negative timestamps far from the epoch are also out of range
+        # (year -31686769).
+        line = '{"timestamp": -1e15, "level": "INFO", "message": "old"}'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "INFO"
+        assert entry.message == "old"
+
+        # 1e308 is larger than the platform time_t can represent and
+        # raises OverflowError on the underlying fromtimestamp call.
+        line = '{"timestamp": 1e308, "level": "WARN", "message": "overflow"}'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "WARNING"
+        assert entry.message == "overflow"
+
+    def test_parse_json_line_keeps_valid_timestamp(self):
+        # Sanity: the try/except around _extract_timestamp must not break
+        # the normal path for a valid numeric timestamp.
+        parser = JSONLogParser()
+        line = '{"timestamp": 1700000000, "level": "INFO", "message": "ok"}'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2023
+        assert entry.level == "INFO"
+
 
 class TestApacheParser:
     """Tests for ApacheParser."""

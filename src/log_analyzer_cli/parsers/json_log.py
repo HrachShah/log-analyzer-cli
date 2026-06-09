@@ -54,8 +54,19 @@ class JSONLogParser(LogParser):
             data = json.loads(line.strip())
         except json.JSONDecodeError:
             return None
-        
-        timestamp = self._extract_timestamp(data)
+
+        # _extract_timestamp can raise ValueError (year out of range),
+        # OSError (negative timestamps on some platforms), or OverflowError
+        # (timestamps larger than the platform time_t range). None of those
+        # mean the line is unparseable — the JSON itself is valid, we just
+        # couldn't turn the numeric timestamp into a datetime. Treat it as
+        # 'no timestamp' and keep the rest of the entry, instead of letting
+        # the exception escape and drop the whole line (and surface a
+        # traceback to the CLI caller).
+        try:
+            timestamp = self._extract_timestamp(data)
+        except (ValueError, OSError, OverflowError):
+            timestamp = None
         level = self._extract_level(data)
         message = self._extract_message(data)
         

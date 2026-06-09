@@ -91,6 +91,35 @@ class TestJSONLogParser:
             assert entry is not None
             assert entry.level == "ERROR"
 
+    def test_parse_json_numeric_timestamp_out_of_range(self):
+        """Numeric Unix timestamps that overflow datetime.fromtimestamp
+        (1e12 maps to year 33658, 1e308 raises OverflowError) must not
+        crash parse() - the rest of the entry should still come through
+        with timestamp=None."""
+        parser = JSONLogParser()
+
+        # 1e12 seconds = year 33658, raises ValueError
+        line = '{"timestamp": 1e12, "level": "ERROR", "message": "oops"}'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+        assert entry.message == "oops"
+
+        # 1e15 ms (after /1000 = 1e12) also out of range
+        line = '{"timestamp": 1e15, "level": "WARN", "message": "future"}'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "WARNING"
+
+        # 1e308 is larger than platform time_t, raises OverflowError
+        line = '{"timestamp": 1e308, "level": "INFO", "message": "huge"}'
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.message == "huge"
+
 
 class TestApacheParser:
     """Tests for ApacheParser."""

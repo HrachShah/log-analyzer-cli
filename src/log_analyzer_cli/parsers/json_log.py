@@ -71,14 +71,29 @@ class JSONLogParser(LogParser):
         )
     
     def _extract_timestamp(self, data: dict) -> Optional[datetime]:
-        """Extract timestamp from JSON data."""
+        """Extract timestamp from JSON data.
+
+        Numeric Unix timestamps in JSON logs are often seconds-since-epoch
+        or milliseconds-since-epoch, but there is no schema. A value of
+        1e12 already maps to year 33658 and datetime.fromtimestamp
+        raises ValueError: year ... is out of range; values like 1e308
+        raise OverflowError: timestamp out of range for platform
+        time_t; very negative values can raise OSError on some
+        platforms. _extract_timestamp is internal and its contract is
+        "returns Optional[datetime]", so a busted numeric field is just
+        "no timestamp" - it is not a reason to drop the rest of the
+        entry.
+        """
         for field in self.TIMESTAMP_FIELDS:
             if field in data:
                 value = data[field]
                 if isinstance(value, (int, float)):
-                    if value > 1e12:
-                        return datetime.fromtimestamp(value / 1000)
-                    return datetime.fromtimestamp(value)
+                    try:
+                        if value > 1e12:
+                            return datetime.fromtimestamp(value / 1000)
+                        return datetime.fromtimestamp(value)
+                    except (ValueError, OSError, OverflowError):
+                        return None
                 if isinstance(value, str):
                     return self._parse_timestamp_string(value)
         return None

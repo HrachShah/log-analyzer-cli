@@ -179,3 +179,38 @@ class TestParserUtils:
     def test_get_parser_for_format_invalid(self):
         parser_class = get_parser_for_format("invalid_format")
         assert parser_class is None
+
+
+class TestApacheParserCombinedUser:
+    """Tests that combined-format lines with a real (non-hyphen) user parse
+    the user, referer, and user-agent fields correctly.
+
+    The previous COMBINED_PATTERN captured the user field as
+    `(?P<user>\\s+)` (one-or-more whitespace), which never matches the
+    literal '-' that Apache uses for missing users. That meant the
+    combined branch never matched, parse() fell through to COMMON_PATTERN,
+    and the user_agent / referer fields were lost."""
+
+    def test_parse_apache_combined_with_real_user(self):
+        parser = ApacheParser()
+        line = (
+            '192.168.1.10 - alice [20/Mar/2025:10:15:32 +0000] '
+            '"GET /index.html HTTP/1.1" 200 2326 '
+            '"https://example.com/referer" "Mozilla/5.0 (X11; Linux) Firefox/120"'
+        )
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.metadata["user"] == "alice"
+        assert entry.metadata["referer"] == "https://example.com/referer"
+        assert entry.metadata["user_agent"] == "Mozilla/5.0 (X11; Linux) Firefox/120"
+
+    def test_parse_apache_combined_with_hyphen_user(self):
+        parser = ApacheParser()
+        line = (
+            '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] '
+            '"GET /index.html HTTP/1.1" 200 2326 "-" "Mozilla/5.0"'
+        )
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.metadata["user"] == "-"
+        assert entry.metadata["user_agent"] == "Mozilla/5.0"

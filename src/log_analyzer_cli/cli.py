@@ -122,13 +122,19 @@ def analyze(
         
         click.echo(f"Using parser: {parser.name}")
         
-        entries = _parse_file(parser, file, level_filter, pattern, start_dt, end_dt)
+        entries, stats = _parse_file(parser, file, level_filter, pattern, start_dt, end_dt)
         
         if not entries:
             click.echo("No log entries found matching criteria", err=True)
             sys.exit(0)
         
         result = analyze_log_entries(entries, group_errors=not no_group)
+        result.total_lines = stats["total_lines"]
+        result.parse_errors = stats["parse_errors"]
+        if stats["skipped_filtered"]:
+            result.warnings.append(
+                f"Skipped {stats['skipped_filtered']} line(s) that did not match the level/pattern/time filters"
+            )
         
         output_str = format_output(result, output, verbose)
         
@@ -190,38 +196,63 @@ def _parse_file(
     start_time: Optional[datetime] = None,
     end_time: Optional[datetime] = None,
 ):
-    """Parse log file with optional filtering."""
+    """Parse log file with optional filtering.
+
+    Returns a 2-tuple ``(entries, stats)`` where ``stats`` records
+    ``total_lines`` (non-empty input lines that survived the include-level,
+    pattern, and time-range filters), ``parse_errors`` (lines that the
+    parser could not turn into a ParsedEntry), and ``skipped_filtered``
+    (lines dropped by the level/pattern/time filters). Previously the
+    function returned only the entries list and the analyzer reported
+    ``total_lines == parsed_entries`` even when half the file was
+    unparseable, hiding the data-quality issue from the user.
+    """
     entries = []
-    
+    total_lines = 0
+    parse_errors = 0
+    skipped_filtered = 0
+
     from log_analyzer_cli.parsers import ParsedEntry
     from log_analyzer_cli.utils import detect_log_level, parse_timestamp
-    
+    import re
+
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
-    
+
     for line in read_log_file(file_path):
         line = line.rstrip("\n\r")
         if not line:
             continue
-        
+
         if include_levels:
             level = detect_log_level(line)
             if level not in include_levels:
+                skipped_filtered += 1
                 continue
-        
+
         if compiled_pattern and not compiled_pattern.search(line):
+            skipped_filtered += 1
             continue
-        
+
         timestamp = parse_timestamp(line)
         if start_time and timestamp and timestamp < start_time:
+            skipped_filtered += 1
             continue
         if end_time and timestamp and timestamp > end_time:
+            skipped_filtered += 1
             continue
-        
+
+        total_lines += 1
         parsed = parser.parse(line)
         if parsed:
             entries.append(parsed)
-    
-    return entries
+        else:
+            parse_errors += 1
+
+    return entries, {
+        "total_lines": total_lines,
+        "parse_errors": parse_errors,
+        "skipped_filtered": skipped_filtered,
+    }
 
 
 if __name__ == "__main__":

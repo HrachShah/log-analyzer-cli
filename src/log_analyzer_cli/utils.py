@@ -37,6 +37,8 @@ def parse_timestamp(line: str) -> Optional[datetime]:
 def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
     """Try to parse a datetime string with various formats."""
     formats = [
+        "%Y-%m-%d %H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
         "%Y-%m-%d %H:%M:%S.%f",
         "%Y-%m-%dT%H:%M:%S.%f",
         "%Y-%m-%d %H:%M:%S",

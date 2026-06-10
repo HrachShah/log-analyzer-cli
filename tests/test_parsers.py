@@ -91,6 +91,67 @@ class TestJSONLogParser:
             assert entry is not None
             assert entry.level == "ERROR"
 
+    def test_parse_json_with_bool_timestamp_does_not_crash(self):
+        # bool is an int subclass in Python — without the explicit
+        # bool-rejection branch, JSON {"timestamp": true} would
+        # silently parse as epoch second 1 and produce a 1970-01-01
+        # entry. The line itself is still useful (level/message/etc.),
+        # so it should be returned with timestamp=None instead of a
+        # bogus 1970 value.
+        parser = JSONLogParser()
+        entry = parser.parse('{"timestamp": true, "level": "ERROR", "message": "bad ts"}')
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+        assert entry.message == "bad ts"
+
+
+class TestJSONLogParserNumericEdgeCases:
+    """Regression tests for the JSON numeric-timestamp overflow.
+
+    A buggy metric forwarder (or a hand-written log) can push
+    Infinity, NaN, or an integer so large that ``datetime.fromtimestamp``
+    raises OverflowError. Those lines should still come back as
+    ParsedEntry objects with ``timestamp=None`` instead of being
+    silently dropped by an unhandled exception in ``parse``.
+    """
+
+    def _parse(self, payload: str):
+        return JSONLogParser().parse(payload)
+
+    def test_infinity_timestamp_yields_none(self):
+        entry = self._parse('{"timestamp": Infinity, "level": "ERROR", "message": "x"}')
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+        assert entry.message == "x"
+
+    def test_nan_timestamp_yields_none(self):
+        entry = self._parse('{"timestamp": NaN, "level": "INFO", "message": "x"}')
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.message == "x"
+
+    def test_out_of_range_int_timestamp_yields_none(self):
+        # 99999999999999999 millis → year ~5.1 billion. fromtimestamp
+        # raises OverflowError. The line should still parse.
+        entry = self._parse('{"timestamp": 99999999999999999, "level": "INFO", "message": "x"}')
+        assert entry is not None
+        assert entry.timestamp is None
+
+    def test_out_of_range_float_timestamp_yields_none(self):
+        # 1e30 seconds is also far outside the time_t range.
+        entry = self._parse('{"timestamp": 1e30, "level": "INFO", "message": "x"}')
+        assert entry is not None
+        assert entry.timestamp is None
+
+    def test_valid_millis_still_parse(self):
+        # Make sure the new guarding didn't break the happy path.
+        entry = self._parse('{"timestamp": 1647780800000, "level": "INFO", "message": "ok"}')
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2022
+
 
 class TestApacheParser:
     """Tests for ApacheParser."""

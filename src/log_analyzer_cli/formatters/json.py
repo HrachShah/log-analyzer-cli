@@ -56,10 +56,33 @@ def _result_to_dict(result: AnalysisResult) -> dict[str, Any]:
         output["error_groups"].append(error_group)
     
     if result.time_distribution and result.time_distribution.entries:
+        # The parsers can return a mix of naive and tz-aware datetimes when
+        # a log file contains both shapes (e.g. one entry from a
+        # 2025-03-20 10:15:32 line and another from a 2025-03-20T10:15:33Z
+        # line in the same file). ``min()`` / ``max()`` raise
+        # ``TypeError: can't compare offset-naive and offset-aware datetimes``
+        # in that case, which would prevent the user from getting *any* JSON
+        # report. Coerce the naive entries to the same tz-awareness as the
+        # first entry before computing the range.
+        entries = result.time_distribution.entries
+        try:
+            start = min(entries).isoformat()
+            end = max(entries).isoformat()
+        except TypeError:
+            anchor = entries[0]
+            normalized = [
+                e if e.tzinfo is not None and anchor.tzinfo is not None
+                else e.replace(tzinfo=anchor.tzinfo)
+                if e.tzinfo is None
+                else e.replace(tzinfo=None)
+                for e in entries
+            ]
+            start = min(normalized).isoformat()
+            end = max(normalized).isoformat()
         output["time_range"] = {
-            "start": min(result.time_distribution.entries).isoformat(),
-            "end": max(result.time_distribution.entries).isoformat(),
-            "total_entries": len(result.time_distribution.entries),
+            "start": start,
+            "end": end,
+            "total_entries": len(entries),
         }
     
     if result.warnings:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -95,24 +96,26 @@ def analyze(
         if levels:
             level_filter = [l.strip().upper() for l in levels.split(",")]
         
-        from datetime import datetime
-        
         start_dt = None
         if start_time:
             try:
                 start_dt = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+                if start_dt.tzinfo is None:
+                    start_dt = start_dt.replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid start-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
-        
+
         end_dt = None
         if end_time:
             try:
                 end_dt = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+                if end_dt.tzinfo is None:
+                    end_dt = end_dt.replace(tzinfo=timezone.utc)
             except ValueError:
                 click.echo(f"Error: Invalid end-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
-        
+
         parser = _get_parser(log_format, file)
         
         if not parser:
@@ -183,6 +186,15 @@ def _get_parser(format_name: str, file_path: Path):
     return GenericParser()
 
 
+def _align_to_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    """Align a datetime to UTC, making it tz-aware if it is naive."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
 def _parse_file(
     parser,
     file_path: Path,
@@ -214,6 +226,7 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
+        timestamp = _align_to_utc(timestamp)
         if start_time and timestamp and timestamp < start_time:
             continue
         if end_time and timestamp and timestamp > end_time:

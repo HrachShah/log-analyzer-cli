@@ -4,11 +4,31 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers import ParsedEntry
 from log_analyzer_cli.utils import normalize_error_pattern
+
+
+def _normalize_timestamp(dt: Optional[datetime]) -> Optional[datetime]:
+    """Return ``dt`` with a tzinfo so naive and aware datetimes can be compared.
+
+    A log file can contain both naive timestamps (``2025-03-20 10:15:32`` from
+    a syslog emitter) and tz-aware ISO timestamps (``2025-03-20T10:15:33Z``
+    from a JSON logger). Comparing them with ``<``, ``>``, ``min``, ``max``, or
+    ``sorted`` raises ``TypeError: can't compare offset-naive and offset-aware
+    datetimes``. The fix treats the first non-None entry's tz-awareness as the
+    baseline and attaches the same tzinfo (UTC for naive baselines) to every
+    other entry before comparison. The original ``entry.timestamp`` on each
+    ParsedEntry is left untouched; only the locally-copied values used in
+    ``sorted``/``min``/``max``/``<`` are normalized.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        return dt
+    return dt.replace(tzinfo=timezone.utc)
 
 
 @dataclass
@@ -88,13 +108,16 @@ class LogAnalyzer:
             
             if entry.timestamp:
                 timestamps.append(entry.timestamp)
-            
+
             if group_errors and entry.level in ("ERROR", "CRITICAL", "WARNING"):
                 self._add_to_error_group(entry)
-        
+
         if timestamps:
+            # Mixed naive/aware timestamps would crash sorted(); align the
+            # copies used for sorting to a common tz-awareness.
+            normalized = [_normalize_timestamp(t) for t in timestamps]
             result.time_distribution = TimeDistribution(
-                entries=sorted(timestamps),
+                entries=sorted(normalized),
                 interval_minutes=60,
             )
         
@@ -121,9 +144,10 @@ class LogAnalyzer:
         group.count += 1
         
         if entry.timestamp:
-            if group.first_seen is None or entry.timestamp < group.first_seen:
+            ts = _normalize_timestamp(entry.timestamp)
+            if group.first_seen is None or ts < _normalize_timestamp(group.first_seen):
                 group.first_seen = entry.timestamp
-            if group.last_seen is None or entry.timestamp > group.last_seen:
+            if group.last_seen is None or ts > _normalize_timestamp(group.last_seen):
                 group.last_seen = entry.timestamp
         
         if len(group.sample_messages) < self.max_error_group_samples:

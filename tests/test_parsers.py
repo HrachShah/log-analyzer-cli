@@ -50,6 +50,34 @@ class TestSyslogParser:
         assert entry.level == "ERROR"
         assert "Database connection failed" in entry.message
 
+    def test_parse_iso8601_with_microseconds_and_z(self):
+        """ISO-8601 timestamps with fractional seconds and a Z suffix should parse."""
+        parser = SyslogParser()
+        line = "2025-03-20T10:15:32.123Z host process[1234]: something happened"
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2025
+        assert entry.timestamp.month == 3
+        assert entry.timestamp.day == 20
+        assert entry.timestamp.hour == 10
+        assert entry.timestamp.minute == 15
+        assert entry.timestamp.second == 32
+        assert entry.timestamp.microsecond == 123000
+        assert entry.timestamp.tzinfo is not None
+
+    def test_parse_iso8601_with_microseconds_and_offset(self):
+        """ISO-8601 timestamps with fractional seconds and a numeric offset should parse."""
+        parser = SyslogParser()
+        line = "2025-03-20T10:15:32.123+02:00 host process[1234]: something happened"
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.microsecond == 123000
+        assert entry.timestamp.utcoffset().total_seconds() == 2 * 3600
+
 
 class TestJSONLogParser:
     """Tests for JSONLogParser."""

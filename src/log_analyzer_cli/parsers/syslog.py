@@ -118,17 +118,22 @@ class SyslogParser(LogParser):
         formats = [
             "%b %d %H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
             "%Y-%m-%dT%H:%M:%S.%f",
             "%Y-%m-%dT%H:%M:%S%z",
         ]
         
+        ts_str_normalized = ts_str
+        if ts_str_normalized.endswith("Z"):
+            ts_str_normalized = ts_str_normalized[:-1] + "+00:00"
+
         for fmt in formats:
             try:
                 if fmt == "%b %d %H:%M:%S":
                     dt = datetime.strptime(ts_str, fmt)
                     dt = dt.replace(year=year)
                     return dt
-                return datetime.strptime(ts_str, fmt)
+                return datetime.strptime(ts_str_normalized, fmt)
             except ValueError:
                 continue
         return None

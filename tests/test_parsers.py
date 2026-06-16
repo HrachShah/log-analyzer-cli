@@ -90,6 +90,54 @@ class TestJSONLogParser:
             entry = parser.parse(line)
             assert entry is not None
             assert entry.level == "ERROR"
+    
+    def test_parse_json_with_out_of_range_epoch_returns_entry_without_timestamp(self):
+        """Far-future epoch (overflows datetime) should not crash the parser."""
+        parser = JSONLogParser()
+        # 253402300800 is 9999-01-01 UTC, which fromtimestamp rejects as
+        # 'year 10000 is out of range'. The previous code let that
+        # ValueError escape and the whole entry was dropped.
+        line = '{"timestamp": 253402300800, "level": "INFO", "message": "future"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.message == "future"
+        assert entry.timestamp is None
+
+    def test_parse_json_with_negative_overflow_epoch_returns_entry_without_timestamp(self):
+        """Far-past epoch (year overflow) should not crash the parser."""
+        parser = JSONLogParser()
+        # -1e15 seconds is well before year 1; fromtimestamp raises
+        # 'year -1199 is out of range'. Same regression as the
+        # far-future case.
+        line = '{"timestamp": -1000000000000, "level": "ERROR", "message": "past"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.message == "past"
+        assert entry.timestamp is None
+
+    def test_parse_json_with_giant_float_epoch_returns_entry_without_timestamp(self):
+        """Float epoch too large for platform time_t should not crash."""
+        parser = JSONLogParser()
+        # 1e30 seconds is 31.7 trillion years — overflows platform time_t
+        # on 64-bit. The old code raised 'timestamp out of range for
+        # platform time_t' and dropped the entry.
+        line = '{"timestamp": 1.0e30, "level": "WARN", "message": "ancient"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.message == "ancient"
+        assert entry.timestamp is None
+
+    def test_parse_json_with_missing_timestamp(self):
+        parser = JSONLogParser()
+        line = '{"level": "INFO", "message": "Test"}'
+        entry = parser.parse(line)
+        
+        assert entry is not None
+        assert entry.level == "INFO"
+        assert entry.message == "Test"
 
 
 class TestApacheParser:

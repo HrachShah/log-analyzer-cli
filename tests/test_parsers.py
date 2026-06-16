@@ -114,7 +114,41 @@ class TestApacheParser:
         assert entry.timestamp is not None
         assert entry.level == "INFO"
         assert entry.metadata["status"] == "200"
-    
+        # The combined-format pattern must actually match a real combined line
+        # (not silently fall through to the common-format pattern), so the
+        # user_agent and referer fields should be present in metadata.
+        assert entry.metadata.get("user_agent") == "Mozilla/5.0"
+        assert entry.metadata.get("referer") == "-"
+
+    def test_parse_apache_combined_authenticated_user(self):
+        parser = ApacheParser()
+        line = '192.168.1.10 - frank [20/Mar/2025:10:15:32 +0000] "GET /api HTTP/1.1" 200 2326 "https://example.com/page" "Mozilla/5.0"'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.metadata["user"] == "frank"
+        assert entry.metadata["referer"] == "https://example.com/page"
+        assert entry.metadata["user_agent"] == "Mozilla/5.0"
+
+    def test_parse_apache_combined_user_agent_with_space(self):
+        parser = ApacheParser()
+        line = '127.0.0.1 - - [20/Mar/2025:10:15:32 +0000] "GET / HTTP/1.1" 200 2326 "-" "Mozilla/5.0 (X11; Linux x86_64)"'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.metadata["user_agent"] == "Mozilla/5.0 (X11; Linux x86_64)"
+
+    def test_parse_apache_combined_5xx_status(self):
+        parser = ApacheParser()
+        line = '10.0.0.1 - - [20/Mar/2025:10:15:32 +0000] "POST /form HTTP/1.1" 500 2326 "http://bad.com" "curl/7.0"'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.level == "ERROR"
+        assert entry.metadata["status"] == "500"
+        assert entry.metadata["user_agent"] == "curl/7.0"
+        assert entry.metadata["referer"] == "http://bad.com"
+
     def test_parse_apache_error_status(self):
         parser = ApacheParser()
         line = '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 500 2326'

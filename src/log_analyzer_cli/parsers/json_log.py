@@ -71,12 +71,29 @@ class JSONLogParser(LogParser):
         )
     
     def _extract_timestamp(self, data: dict) -> Optional[datetime]:
-        """Extract timestamp from JSON data."""
+        """Extract timestamp from JSON data.
+
+        Numeric timestamps come in four common unit widths.  JavaScript's
+        ``Date.now()`` and most high
+        """
         for field in self.TIMESTAMP_FIELDS:
             if field in data:
                 value = data[field]
                 if isinstance(value, (int, float)):
-                    if value > 1e12:
+                    if not isinstance(value, int) or value <= 0:
+                        return None
+                    # Distinguish seconds, milliseconds, microseconds, and
+                    # nanoseconds by the width of the value, not just
+                    # whether it is > 1e12. A value of 1.7e15 (microseconds)
+                    # would be misread as milliseconds in the old code
+                    # and produce a year 53872 ValueError, and a value of
+                    # 1.7e18 (nanoseconds) would silently overflow
+                    # datetime's range.
+                    if value >= 1e18:
+                        return datetime.fromtimestamp(value / 1e9)
+                    if value >= 1e15:
+                        return datetime.fromtimestamp(value / 1e6)
+                    if value >= 1e12:
                         return datetime.fromtimestamp(value / 1000)
                     return datetime.fromtimestamp(value)
                 if isinstance(value, str):

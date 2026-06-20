@@ -149,6 +149,31 @@ class TestLogAnalyzer:
         analyzer.reset()
         assert len(analyzer._error_patterns) == 0
 
+    def test_repeated_analyze_does_not_leak_error_groups(self):
+        analyzer = LogAnalyzer()
+        first_batch = [
+            ParsedEntry(
+                raw="Error: timeout after 30s",
+                level="ERROR",
+                message="timeout after 30s",
+            ),
+        ]
+        second_batch = [
+            ParsedEntry(
+                raw="Error: db connection lost",
+                level="ERROR",
+                message="db connection lost",
+            ),
+        ]
+
+        first_result = analyzer.analyze(first_batch)
+        second_result = analyzer.analyze(second_batch)
+
+        assert len(first_result.error_groups) == 1
+        assert len(second_result.error_groups) == 1
+        assert second_result.error_groups[0].pattern != first_result.error_groups[0].pattern
+        assert second_result.error_groups[0].count == 1
+
 
 class TestAnalyzeLogEntries:
     """Tests for the analyze_log_entries function."""

@@ -72,7 +72,27 @@ class TestCLI:
     def test_analyze_level_filter(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "-l", "ERROR,WARNING"])
         assert result.exit_code == 0
-    
+
+    def test_analyze_level_filter_uses_parsed_level_not_raw_line(
+        self, runner, tmp_path
+    ):
+        # JSON log line where the message body mentions "error" as part of a
+        # description but the structured level field is WARNING. The
+        # pre-
+        log = tmp_path / "host-error-actual-warn.log"
+        log.write_text(
+            '{"level": "WARNING", "message": "error in the system"}\n'
+        )
+        result = runner.invoke(main, ["analyze", str(log), "-l", "WARNING", "-v"])
+        assert result.exit_code == 0
+        assert "Total Lines:" in result.output
+        assert "WARNING" in result.output
+        # "ERROR" appears as a section header ("TOP ERROR GROUPS") so
+        # check the level-distribution line specifically.
+        import re
+        level_rows = re.findall(r"\bERROR\b\s+:\s+\d+", result.output)
+        assert not level_rows, f"unexpected ERROR level row: {level_rows}"
+
     def test_analyze_pattern_filter(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "-p", "database"])
         assert result.exit_code == 0

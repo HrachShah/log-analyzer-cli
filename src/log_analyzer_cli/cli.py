@@ -193,36 +193,45 @@ def _parse_file(
 ):
     """Parse log file with optional filtering."""
     entries = []
-    
+
     from log_analyzer_cli.parsers import ParsedEntry
-    from log_analyzer_cli.utils import detect_log_level, parse_timestamp
+    from log_analyzer_cli.utils import parse_timestamp
     import re
-    
+
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
-    
+
     for line in read_log_file(file_path):
         line = line.rstrip("\n\r")
         if not line:
             continue
-        
-        if include_levels:
-            level = detect_log_level(line)
-            if level not in include_levels:
-                continue
-        
+
         if compiled_pattern and not compiled_pattern.search(line):
             continue
-        
+
         timestamp = parse_timestamp(line)
         if start_time and timestamp and timestamp < start_time:
             continue
         if end_time and timestamp and timestamp > end_time:
             continue
-        
+
         parsed = parser.parse(line)
-        if parsed:
-            entries.append(parsed)
-    
+        if not parsed:
+            continue
+
+        # Filter on the parser's level rather than re-scanning the raw
+        # line: the parser already strips host/process names (the syslog
+        # parser detects level from the message portion only), so a
+        # WARNING line whose message happens to contain the word "error"
+        # is reported as WARNING consistently in both the filter check
+        # and the output. The pre-parse filter form scanned the full
+        # line and could let "WARNING: error in user input" slip past
+        # --levels=ERROR, only for the output to then label it WARNING
+        # — the filter and the report disagreed about the same line.
+        if include_levels and parsed.level not in include_levels:
+            continue
+
+        entries.append(parsed)
+
     return entries
 
 

@@ -74,6 +74,13 @@ class LogAnalyzer:
         Returns:
             Analysis result.
         """
+        # Clear any patterns accumulated by a previous call so re-using the
+        # same LogAnalyzer across multiple batches does not leak earlier
+        # groups into the new result. Callers that want to keep history
+        # across calls should manage their own aggregation instead of
+        # relying on internal instance state.
+        self._error_patterns = {}
+
         result = AnalysisResult()
         result.total_lines = len(entries)
         result.parsed_entries = len(entries)

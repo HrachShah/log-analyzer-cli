@@ -131,6 +131,25 @@ class TestApacheParser:
         assert entry is not None
         assert entry.level == "WARNING"
 
+    def test_parse_apache_combined_captures_authenticated_user(self):
+        parser = ApacheParser()
+        line = '192.168.1.10 - frank [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "http://example.com/" "Mozilla/5.0"'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.metadata["user"] == "frank"
+        assert entry.metadata["host"] == "192.168.1.10"
+        assert entry.metadata["status"] == "200"
+        assert entry.metadata["request"] == "GET /index.html HTTP/1.1"
+
+    def test_parse_apache_combined_captures_anonymous_user_dash(self):
+        parser = ApacheParser()
+        line = '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "-" "Mozilla/5.0"'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.metadata["user"] == "-"
+
 
 class TestGenericParser:
     """Tests for GenericParser."""

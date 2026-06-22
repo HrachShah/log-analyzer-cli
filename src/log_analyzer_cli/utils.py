@@ -43,6 +43,7 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%dT%H:%M:%S%z",
         "%d/%b/%Y:%H:%M:%S",
+        "%d/%b/%Y:%H:%M:%S %z",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
     ]

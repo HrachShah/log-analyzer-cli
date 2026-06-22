@@ -131,6 +131,31 @@ class TestApacheParser:
         assert entry is not None
         assert entry.level == "WARNING"
 
+    def test_parse_apache_combined_captures_user_field(self):
+        # The previous COMBINED_PATTERN used (?P<user>\s+), so any combined
+        # line with a non-empty user (e.g. an authenticated request behind
+        # a mod_auth or a basic-auth proxy) silently fell through to the
+        # COMMON_PATTERN, which doesn't capture referer or user_agent.
+        parser = ApacheParser()
+        line = '192.168.1.10 - frank [20/Mar/2025:10:15:32 +0000] "GET /api HTTP/1.1" 200 512 "https://x.example/" "curl/8.0"'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.metadata["user"] == "frank"
+        assert entry.metadata["referer"] == "https://x.example/"
+        assert entry.metadata["user_agent"] == "curl/8.0"
+
+    def test_parse_apache_combined_anonymous_user(self):
+        # The anonymous user is conventionally a single '-' (not whitespace),
+        # so the regex needs to match a non-empty non-whitespace token.
+        parser = ApacheParser()
+        line = '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "-" "Mozilla/5.0"'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.metadata["user"] == "-"
+        assert entry.metadata["user_agent"] == "Mozilla/5.0"
+
 
 class TestGenericParser:
     """Tests for GenericParser."""

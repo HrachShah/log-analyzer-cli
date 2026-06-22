@@ -87,7 +87,57 @@ class TestCLI:
     def test_analyze_auto_format_detection(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "--format", "auto"])
         assert result.exit_code == 0
-    
+
+    def test_analyze_time_filter_naive_start_with_aware_log(self, runner, tmp_path):
+        """Naive --start-time must compare against TZ-aware log timestamps without raising."""
+        import json as json_mod
+        log = tmp_path / "tz-aware.log"
+        log.write_text(
+            json_mod.dumps({
+                "timestamp": "2025-03-20T10:15:32.123Z",
+                "level": "INFO",
+                "message": "Started",
+            }) + "\n" +
+            json_mod.dumps({
+                "timestamp": "2025-03-20T10:17:00.000Z",
+                "level": "ERROR",
+                "message": "Failed",
+            }) + "\n"
+        )
+        result = runner.invoke(
+            main,
+            ["analyze", str(log), "-f", "json", "-o", "json",
+             "--start-time", "2025-03-20 10:16:00"],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"parsed_entries": 1' in result.output
+        assert "ERROR" in result.output
+        assert "Started" not in result.output
+
+    def test_analyze_level_filter_uses_parser_level_not_raw_text(self, runner, tmp_path):
+        """--levels filters by the parser's level, not the raw-line keyword scan."""
+        log = tmp_path / "apache.log"
+        log.write_text(
+            '127.0.0.1 - - [20/Mar/2025:10:15:32 +0000] '
+            '"GET / HTTP/1.1" 200 1234 "-" "Mozilla/ERROR/5.0"\n'
+            '127.0.0.1 - - [20/Mar/2025:10:15:33 +0000] '
+            '"GET /api HTTP/1.1" 500 5678 "-" "curl/8.0"\n'
+        )
+        result = runner.invoke(
+            main,
+            ["analyze", str(log), "-f", "apache", "-o", "json", "-l", "ERROR"],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"parsed_entries": 1' in result.output
+        assert "ERROR" in result.output
+        result = runner.invoke(
+            main,
+            ["analyze", str(log), "-f", "apache", "-o", "json", "-l", "INFO"],
+        )
+        assert result.exit_code == 0, result.output
+        assert '"parsed_entries": 1' in result.output
+        assert "INFO" in result.output
+
     def test_help(self, runner):
         result = runner.invoke(main, ["--help"])
         assert result.exit_code == 0

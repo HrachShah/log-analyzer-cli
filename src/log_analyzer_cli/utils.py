@@ -89,25 +89,50 @@ def normalize_error_pattern(error_msg: str) -> str:
         Normalized pattern string.
     """
     pattern = error_msg
-    
+
+    # Replace full URLs (with scheme) as a single unit, BEFORE hostname /
+    # path replacements run — otherwise a URL like https://api.example.com/foo
+    # is broken into "https:" + "/api.example.com/foo", the hostname matcher
+    # (which requires the host to be a single word before a known TLD) misses
+    # "api.example.com" because "api" is preceded by "/", and the path
+    # matcher swallows everything to end-of-line. Result: "https:<PATH>".
+    pattern = re.sub(r'\b[a-zA-Z][a-zA-Z0-9+.\-]*://[^\s]+', '<URL>', pattern)
+
+    # Replace IPv6 addresses (with or without embedded ::) before the IPv4 /
+    # port rules fire, since IPv6 contains ':' but is not a "host:port".
+    pattern = re.sub(
+        r'\b(?:[0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}\b', '<IPV6>', pattern
+    )
+
     # Replace IP:port combinations first
     pattern = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+', '<IP>', pattern)
     
     # Replace plain IP addresses
     pattern = re.sub(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', '<IP>', pattern)
     
-    # Replace hostnames (domain-like patterns)
-    pattern = re.sub(r'\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(local|com|net|org|io|dev)\b', '<HOST>', pattern)
+    # Replace hostnames: support multi-segment domains (e.g. api.example.com)
+    # as well as single-label hostnames ending in a known TLD. The
+    # single-segment pattern matched only "host.tld" and silently dropped
+    # deeper hostnames, so api.example.com leaked through to the path rule.
+    pattern = re.sub(
+        r'\b(?:[a-zA-Z0-9][-a-zA-Z0-9]*\.)+'
+        r'(?:local|com|net|org|io|dev|co|uk|gov|edu|info|biz|us|me|app|ai)\b',
+        '<HOST>',
+        pattern,
+    )
     pattern = re.sub(r'\blocalhost\b', '<HOST>', pattern)
     
     # Replace port numbers (after IP and host replacement)
     pattern = re.sub(r':\d+', ':<PORT>', pattern)
     
     # Replace UUIDs
-    pattern = re.sub(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', '<UUID>', pattern)
+    pattern = re.sub(
+        r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', '<UUID>', pattern
+    )
     
-    # Replace paths
-    pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
+    # Replace paths (only "/" or "./" or "../" relative paths, not the trailing
+    # slash of a URL that was already collapsed to <URL>).
+    pattern = re.sub(r'(?:^|[\s(=])\.{0,2}/[^\s]+', lambda m: m.group(0)[0] + '<PATH>', pattern)
     
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)

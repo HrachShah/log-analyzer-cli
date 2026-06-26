@@ -195,7 +195,7 @@ def _parse_file(
     entries = []
     
     from log_analyzer_cli.parsers import ParsedEntry
-    from log_analyzer_cli.utils import detect_log_level, parse_timestamp
+    from log_analyzer_cli.utils import detect_log_level, parse_timestamp, _align_datetime_to_filter
     import re
     
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
@@ -214,6 +214,7 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
+        timestamp = _align_datetime_to_filter(timestamp, start_time, end_time)
         if start_time and timestamp and timestamp < start_time:
             continue
         if end_time and timestamp and timestamp > end_time:

@@ -179,3 +179,64 @@ class TestParserUtils:
     def test_get_parser_for_format_invalid(self):
         parser_class = get_parser_for_format("invalid_format")
         assert parser_class is None
+
+
+class TestISOFractionalTimestampParsing:
+    """Regression tests for fractional-second + timezone ISO 8601 timestamps.
+
+    `utils._try_parse_datetime` previously lacked the `%Y-%m-%dT%H:%M:%S.%f%z`
+    format, so timestamps like `2025-03-20T10:15:32.123Z` returned None even
+    though they were correctly extracted by the upstream regex. The same gap
+    existed in `SyslogParser._parse_timestamp`, breaking RFC 5424 syslog lines
+    that include both fractional seconds and a timezone offset. These tests
+    pin both behaviours.
+    """
+
+    def test_utils_parses_fractional_z(self):
+        from log_analyzer_cli.utils import parse_timestamp
+        from datetime import datetime, timezone
+
+        dt = parse_timestamp("2025-03-20T10:15:32.123Z")
+        assert dt is not None
+        assert dt == datetime(2025, 3, 20, 10, 15, 32, 123000, tzinfo=timezone.utc)
+
+    def test_utils_parses_fractional_with_offset(self):
+        from log_analyzer_cli.utils import parse_timestamp
+        from datetime import datetime, timezone, timedelta
+
+        dt = parse_timestamp("2025-03-20T10:15:32.123+05:30")
+        assert dt is not None
+        assert dt == datetime(
+            2025, 3, 20, 10, 15, 32, 123000,
+            tzinfo=timezone(timedelta(hours=5, minutes=30)),
+        )
+
+    def test_utils_parses_fractional_with_negative_offset(self):
+        from log_analyzer_cli.utils import parse_timestamp
+        from datetime import datetime, timezone, timedelta
+
+        dt = parse_timestamp("2025-03-20T10:15:32.5-08:00")
+        assert dt is not None
+        assert dt == datetime(
+            2025, 3, 20, 10, 15, 32, 500000,
+            tzinfo=timezone(timedelta(hours=-8)),
+        )
+
+    def test_syslog_parses_fractional_z(self):
+        parser = SyslogParser()
+        line = "2025-03-20T10:15:32.123Z hostname app[123]: message body"
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.microsecond == 123000
+        assert entry.timestamp.utcoffset().total_seconds() == 0
+        assert entry.message == "message body"
+
+    def test_syslog_parses_fractional_with_offset(self):
+        parser = SyslogParser()
+        line = "2025-03-20T10:15:32.500+05:30 hostname app[123]: message body"
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.microsecond == 500000
+        assert entry.timestamp.utcoffset().total_seconds() == 5 * 3600 + 30 * 60

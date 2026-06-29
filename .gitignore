@@ -142,8 +142,18 @@ cython_debug/
 # OS
 .DS_Store
 Thumbs.db
-# Keep test fixtures in examples/ unignored:
-# First, un-ignore the examples/ directory
-!examples/
-# Then re-ignore *.log files inside it (they would otherwise be unignored too)
+# Keep test fixtures in examples/ tracked:
+# First, re-ignore *.log files inside examples/ (Django's default ignore).
 examples/*.log
+# Then un-ignore the examples/ directory itself.
+!examples/
+# Finally, list each fixture log explicitly so the last matching pattern is
+# a negation — gitignore treats the last matching pattern as authoritative,
+# so the !examples/<name>.log entries below override the examples/*.log
+# rule above and the fixtures end up tracked. tests/conftest.py's
+# syslog_file()/json_file()/apache_file()/mixed_file() fixtures then
+# resolve on a fresh checkout.
+!examples/syslog-sample.log
+!examples/app-json.log
+!examples/apache-sample.log
+!examples/mixed.log

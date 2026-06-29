@@ -1,0 +1,7 @@
+{"timestamp":"2025-03-20T10:15:32Z","level":"INFO","message":"Application started"}
+{"timestamp":"2025-03-20T10:15:45Z","level":"DEBUG","message":"Loading configuration from /etc/app/config.yaml"}
+{"timestamp":"2025-03-20T10:16:01Z","level":"WARNING","message":"Cache miss rate above threshold: 45%"}
+{"timestamp":"2025-03-20T10:16:15Z","level":"ERROR","message":"Connection to database at 10.0.0.5:5432 refused"}
+{"timestamp":"2025-03-20T10:16:30Z","level":"ERROR","message":"Retrying database connection (attempt 2/5)"}
+{"timestamp":"2025-03-20T10:16:45Z","level":"INFO","message":"Database connection restored"}
+{"timestamp":"2025-03-20T10:17:00Z","level":"CRITICAL","message":"Memory usage exceeded 90%: 15.2GB / 16GB"}

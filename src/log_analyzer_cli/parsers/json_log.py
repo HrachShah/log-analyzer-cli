@@ -76,11 +76,35 @@ class JSONLogParser(LogParser):
             if field in data:
                 value = data[field]
                 if isinstance(value, (int, float)):
-                    if value > 1e12:
-                        return datetime.fromtimestamp(value / 1000)
-                    return datetime.fromtimestamp(value)
+                    return self._numeric_to_datetime(value)
                 if isinstance(value, str):
                     return self._parse_timestamp_string(value)
+        return None
+
+    @staticmethod
+    def _numeric_to_datetime(value: float) -> Optional[datetime]:
+        """Convert a numeric timestamp to a datetime.
+
+        JSON log producers disagree on the unit: seconds (Unix epoch),
+        milliseconds (Java ``System.currentTimeMillis()``), microseconds
+        (``UnixMicro()``), or nanoseconds (``UnixNano()``). The
+        heuristic is magnitude-based — anything above the year ~33658
+        boundary can't be a raw second count, so we keep dividing by
+        1000 until the result lands in a sensible range or we run out
+        of plausible units.
+        """
+        if value != value or value in (float("inf"), float("-inf")):
+            return None
+
+        # datetime.fromtimestamp can't represent years far outside the
+        # usual range; clamp early so a stray nanosecond value doesn't
+        # bubble up as "year 52218064 is out of range".
+        seconds = float(value)
+        for _ in range(4):
+            try:
+                return datetime.fromtimestamp(seconds)
+            except (OverflowError, OSError, ValueError):
+                seconds /= 1000.0
         return None
     
     def _parse_timestamp_string(self, ts_str: str) -> Optional[datetime]:

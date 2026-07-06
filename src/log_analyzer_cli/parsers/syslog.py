@@ -113,22 +113,32 @@ class SyslogParser(LogParser):
         """Parse syslog timestamp."""
         if not ts_str:
             return None
-        
+
         year = datetime.now().year
         formats = [
             "%b %d %H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
             "%Y-%m-%dT%H:%M:%S.%f",
             "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
         ]
-        
+
+        # Normalize the RFC 3339 'Z' UTC suffix to the form Python's
+        # datetime.strptime expects via %z. The PATTERNS regex above accepts
+        # 'Z', but %z matches '+00:00' / '-05:30' etc., not the single-letter
+        # 'Z' from ISO 8601 / RFC 3339. Without this normalization a syslog
+        # line whose timestamp uses 'Z' parses the rest of the line
+        # successfully but loses its timestamp (set to None below).
+        ts_normalized = ts_str[:-1] + "+00:00" if ts_str.endswith("Z") else ts_str
+
         for fmt in formats:
             try:
                 if fmt == "%b %d %H:%M:%S":
                     dt = datetime.strptime(ts_str, fmt)
                     dt = dt.replace(year=year)
                     return dt
-                return datetime.strptime(ts_str, fmt)
+                return datetime.strptime(ts_normalized, fmt)
             except ValueError:
                 continue
         return None

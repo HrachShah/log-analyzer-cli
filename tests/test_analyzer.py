@@ -149,6 +149,42 @@ class TestLogAnalyzer:
         analyzer.reset()
         assert len(analyzer._error_patterns) == 0
 
+    def test_repeated_analyze_does_not_carry_over_error_groups(self):
+        """Each analyze() call is a fresh analysis of *its own* entries.
+
+        Regression: LogAnalyzer previously kept self._error_patterns
+        across calls, so a second analyze() that contained the same
+        error message as a previous one would report count == 2 even
+        though only one matching entry was in the second batch. Callers
+        that hold onto an analyzer and reuse it (e.g. a daemon that
+        re-analyses incoming batches) used to get steadily inflating
+        counts on every run. The fix clears the accumulator at the top
+        of analyze() so the second batch sees only its own patterns.
+        """
+        analyzer = LogAnalyzer()
+        first = [
+            ParsedEntry(
+                raw="2025-03-20 ERROR connection refused to upstream",
+                level="ERROR",
+                message="connection refused to upstream",
+            ),
+        ]
+        second = [
+            ParsedEntry(
+                raw="2025-03-20 ERROR connection refused to upstream",
+                level="ERROR",
+                message="connection refused to upstream",
+            ),
+        ]
+
+        first_result = analyzer.analyze(first)
+        second_result = analyzer.analyze(second)
+
+        assert len(first_result.error_groups) == 1
+        assert first_result.error_groups[0].count == 1
+        assert len(second_result.error_groups) == 1
+        assert second_result.error_groups[0].count == 1
+
 
 class TestAnalyzeLogEntries:
     """Tests for the analyze_log_entries function."""

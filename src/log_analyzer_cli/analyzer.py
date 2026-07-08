@@ -71,9 +71,20 @@ class LogAnalyzer:
             entries: List of parsed log entries.
             group_errors: Whether to group similar errors.
             
-        Returns:
-            Analysis result.
+            Returns:
+                Analysis result.
         """
+        # Each analyze() call is a fresh analysis of the entries passed
+        # in, so the internal error-pattern accumulator must start empty.
+        # Without this, calling analyze() twice on the same LogAnalyzer
+        # would carry over the previous call's groups and double-count
+        # any pattern shared between the two batches (the second batch's
+        # groups would have count == 2 even when the second batch had a
+        # single matching entry). Callers that want to compose multiple
+        # batches can pass the concatenated list in a single call, or
+        # call reset() between calls.
+        self._error_patterns = {}
+
         result = AnalysisResult()
         result.total_lines = len(entries)
         result.parsed_entries = len(entries)

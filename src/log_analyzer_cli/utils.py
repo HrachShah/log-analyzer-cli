@@ -205,10 +205,25 @@ def filter_lines(
         
         timestamp = parse_timestamp(line)
         
-        if start_time and timestamp and timestamp < start_time:
-            continue
+        if start_time and timestamp:
+            # Normalize a tz-aware timestamp to naive so a naive --start-time
+            # bound can be compared against log entries with a UTC offset,
+            # while preserving the existing behavior for tz-naive entries.
+            compare_ts = (
+                timestamp.replace(tzinfo=None)
+                if timestamp.tzinfo
+                else timestamp
+            )
+            if compare_ts < start_time:
+                continue
         
-        if end_time and timestamp and timestamp > end_time:
-            continue
+        if end_time and timestamp:
+            compare_ts = (
+                timestamp.replace(tzinfo=None)
+                if timestamp.tzinfo
+                else timestamp
+            )
+            if compare_ts > end_time:
+                continue
         
         yield line_num, line, timestamp, level

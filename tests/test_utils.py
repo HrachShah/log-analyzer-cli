@@ -139,3 +139,28 @@ class TestNormalizeErrorPattern:
 
     def test_hex_replaced(self) -> None:
         assert normalize_error_pattern("pointer 0xdeadbeef freed") == "pointer <HEX> freed"
+
+
+class TestFilterLinesTzAware:
+    """Tests that filter_lines handles timezone-aware and naive timestamps
+    the same way cli._parse_file does: naive log entries are compared as-is
+    against the (naive) start/end bound, while tz-aware entries are stripped
+    to naive for the comparison. This prevents the TypeError that would
+    otherwise fire when one side is aware and the other is naive."""
+
+    def test_filter_lines_tz_aware_entry_against_naive_start(self) -> None:
+        """A tz-aware entry at 15:00:00+00:00 must not crash when compared
+        against a naive start_time of 16:00:00 -- the tz-aware offset is
+        dropped to naive so the comparison can happen, and the entry is
+        correctly dropped as being before the start bound."""
+        lines = ["2025-10-10T15:00:00+00:00 INFO hello"]
+        start = datetime(2025, 10, 10, 16, 0, 0)
+        results = list(filter_lines(iter(lines), start_time=start))
+        assert results == []
+
+    def test_filter_lines_tz_aware_entry_after_naive_start(self) -> None:
+        lines = ["2025-10-10T17:00:00+00:00 INFO kept"]
+        start = datetime(2025, 10, 10, 16, 0, 0)
+        results = list(filter_lines(iter(lines), start_time=start))
+        assert len(results) == 1
+        assert results[0][1] == "2025-10-10T17:00:00+00:00 INFO kept"

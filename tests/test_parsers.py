@@ -131,6 +131,22 @@ class TestApacheParser:
         assert entry is not None
         assert entry.level == "WARNING"
 
+    def test_parse_apache_combined_with_real_user_captures_referer_and_agent(self):
+        parser = ApacheParser()
+        line = (
+            '192.168.1.10 - frank [20/Mar/2025:10:15:32 +0000] '
+            '"GET /index.html HTTP/1.1" 200 2326 '
+            '"https://example.com" "Mozilla/5.0"'
+        )
+        match = parser.COMBINED_PATTERN.match(line)
+        assert match is not None
+        assert match.group("user") == "frank"
+        entry = parser.parse(line)
+        assert entry is not None
+        assert entry.metadata.get("user") == "frank"
+        assert entry.metadata.get("referer") == "https://example.com"
+        assert entry.metadata.get("user_agent") == "Mozilla/5.0"
+
 
 class TestGenericParser:
     """Tests for GenericParser."""

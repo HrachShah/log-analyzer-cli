@@ -185,11 +185,38 @@ def filter_lines(
             continue
         
         timestamp = parse_timestamp(line)
-        
-        if start_time and timestamp and timestamp < start_time:
+
+        # Normalize the comparison so a tz-aware timestamp and a naive bound,
+        # or a naive timestamp and a tz-aware bound, do not raise
+        # "can't compare offset-naive and offset-aware datetimes". Drop the
+        # tzinfo from whichever side has it so the two values land on the
+        # same offset axis -- the timestamps are wall-clock entries and the
+        # bounds are CLI-supplied filters, so lossy wall-clock comparison
+        # matches the contract used by cli._parse_file.
+        if timestamp is not None and (start_time is not None or end_time is not None):
+            if timestamp.tzinfo is not None:
+                compare_ts = timestamp.replace(tzinfo=None)
+            else:
+                compare_ts = timestamp
+            compare_start = (
+                start_time.replace(tzinfo=None)
+                if start_time is not None and start_time.tzinfo is not None
+                else start_time
+            )
+            compare_end = (
+                end_time.replace(tzinfo=None)
+                if end_time is not None and end_time.tzinfo is not None
+                else end_time
+            )
+        else:
+            compare_ts = timestamp
+            compare_start = start_time
+            compare_end = end_time
+
+        if compare_start and compare_ts and compare_ts < compare_start:
             continue
-        
-        if end_time and timestamp and timestamp > end_time:
+
+        if compare_end and compare_ts and compare_ts > compare_end:
             continue
-        
+
         yield line_num, line, timestamp, level

@@ -92,3 +92,12 @@ class TestFilterLinesTzAware:
         )
         results = list(filter_lines(lines))
         assert len(results) == 2
+
+
+class TestNormalizeErrorPattern:
+    """Cover ordering-sensitive replacements in error grouping."""
+
+    def test_hex_values_are_not_partially_replaced_as_numbers(self) -> None:
+        from log_analyzer_cli.utils import normalize_error_pattern
+
+        assert normalize_error_pattern("invalid token 0xDEAD1234") == "invalid token <HEX>"

@@ -75,6 +75,16 @@ class TestSyslogParser:
         assert entry.timestamp.utcoffset() is not None
         assert entry.message == "something happened"
 
+    def test_parse_syslog_with_rfc3339_compact_offset(self):
+        parser = SyslogParser()
+        line = "2025-03-20T10:15:32+0000 web01 app: compact offset"
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.utcoffset().total_seconds() == 0
+        assert entry.message == "compact offset"
+
     def test_parse_syslog_with_rfc3339_z_suffix_and_fractional_seconds(self):
         """The 'Z' suffix should also work with the fractional-seconds form."""
         parser = SyslogParser()

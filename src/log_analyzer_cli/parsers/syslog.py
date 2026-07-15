@@ -37,7 +37,7 @@ class SyslogParser(LogParser):
         ),
         re.compile(
             r'^'
-            r'(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)'
+            r'(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)'
             r'\s+'
             r'(?P<host>\S+)'
             r'\s+'

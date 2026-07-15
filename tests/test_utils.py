@@ -19,3 +19,11 @@ def test_filter_lines_compares_mixed_timestamp_awareness():
         "2026-04-20T10:30:00Z INFO naive boundary match",
         "2026-04-20 10:30:01 INFO aware boundary match",
     ]
+
+
+def test_parse_timestamp_accepts_slash_separated_iso_timestamp():
+    from log_analyzer_cli.utils import parse_timestamp
+
+    parsed = parse_timestamp("2026/04/20 10:30:00 INFO started")
+
+    assert parsed == datetime(2026, 4, 20, 10, 30, 0)

@@ -193,6 +193,20 @@ def filter_lines(
         Tuples of (line_number, line, timestamp, level).
     """
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
+    filter_times = (start_time, end_time)
+    if any(boundary is not None and boundary.tzinfo is not None for boundary in filter_times):
+        filter_times = tuple(
+            boundary.replace(tzinfo=timezone.utc)
+            if boundary is not None and boundary.tzinfo is None
+            else boundary
+            for boundary in filter_times
+        )
+    elif any(boundary is not None for boundary in filter_times):
+        filter_times = tuple(
+            boundary.replace(tzinfo=None) if boundary is not None else None
+            for boundary in filter_times
+        )
+    start_time, end_time = filter_times
     
     for line_num, line in enumerate(lines, 1):
         line = line.rstrip("\n\r")

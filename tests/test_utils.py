@@ -85,3 +85,9 @@ class TestFilterLinesTimezone:
         result = list(filter_lines(lines, start_time=start))
         assert len(result) == 1
         assert "inside window" in result[0][1]
+    def test_mixed_filter_boundaries_use_one_timezone(self):
+        lines = iter(["2025-01-01T12:00:00+00:00 INFO inside window"])
+        start = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+        end = datetime(2025, 1, 2, 0, 0, 0)
+        result = list(filter_lines(lines, start_time=start, end_time=end))
+        assert len(result) == 1

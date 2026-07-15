@@ -83,6 +83,18 @@ class TestCLI:
             ["analyze", str(json_file), "--start-time", "2025-03-20 10:00:00"]
         )
         assert result.exit_code == 0
+
+    def test_analyze_time_filter_handles_timezone_aware_log(self, runner, tmp_path):
+        log_file = tmp_path / "aware.log"
+        log_file.write_text("2025-03-20T10:15:32+00:00 INFO Application started\n")
+
+        result = runner.invoke(
+            main,
+            ["analyze", str(log_file), "--start-time", "2025-03-20 10:00:00"],
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Total Lines" in result.output
     
     def test_analyze_auto_format_detection(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "--format", "auto"])

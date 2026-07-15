@@ -214,9 +214,27 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
+
+        if timestamp is not None and (start_time is not None or end_time is not None):
+            compare_timestamp = timestamp.replace(tzinfo=None) if timestamp.tzinfo is not None else timestamp
+            compare_start = (
+                start_time.replace(tzinfo=None)
+                if start_time is not None and start_time.tzinfo is not None
+                else start_time
+            )
+            compare_end = (
+                end_time.replace(tzinfo=None)
+                if end_time is not None and end_time.tzinfo is not None
+                else end_time
+            )
+        else:
+            compare_timestamp = timestamp
+            compare_start = start_time
+            compare_end = end_time
+
+        if compare_start and compare_timestamp and compare_timestamp < compare_start:
             continue
-        if end_time and timestamp and timestamp > end_time:
+        if compare_end and compare_timestamp and compare_timestamp > compare_end:
             continue
         
         parsed = parser.parse(line)

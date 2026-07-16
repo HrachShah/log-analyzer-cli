@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timezone
+
 import pytest
 
 from log_analyzer_cli.parsers import (
@@ -81,6 +83,20 @@ class TestJSONLogParser:
         
         assert entry is not None
         assert entry.level == "ERROR"
+        assert entry.timestamp is not None
+        assert entry.timestamp.tzinfo == timezone.utc
+
+    def test_parse_json_numeric_timestamp_is_stable_across_local_timezones(self, monkeypatch):
+        parser = JSONLogParser()
+        line = '{"timestamp": 1647780800, "level": "INFO", "message": "Started"}'
+
+        monkeypatch.setenv("TZ", "Pacific/Auckland")
+        time_a = parser.parse(line).timestamp
+        monkeypatch.setenv("TZ", "America/Los_Angeles")
+        time_b = parser.parse(line).timestamp
+
+        assert time_a == time_b
+        assert time_a.tzinfo == timezone.utc
     
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
@@ -81,7 +81,7 @@ class JSONLogParser(LogParser):
                     else:
                         seconds = value
                     try:
-                        return datetime.fromtimestamp(seconds)
+                        return datetime.fromtimestamp(seconds, tz=timezone.utc)
                     except (ValueError, OverflowError, OSError):
                         return None
                 if isinstance(value, str):

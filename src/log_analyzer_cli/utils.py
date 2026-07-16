@@ -20,6 +20,7 @@ def parse_timestamp(line: str) -> Optional[datetime]:
     """
     timestamp_patterns = [
         r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?",
+        r"\d{4}/\d{2}/\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?",
         r"\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}",
         r"[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}",
     ]
@@ -42,6 +43,11 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%dT%H:%M:%S%z",
+        "%Y/%m/%d %H:%M:%S.%f",
+        "%Y/%m/%dT%H:%M:%S.%f",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y/%m/%dT%H:%M:%S",
+        "%Y/%m/%dT%H:%M:%S%z",
         "%d/%b/%Y:%H:%M:%S",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",

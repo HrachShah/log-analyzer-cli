@@ -75,12 +75,24 @@ class JSONLogParser(LogParser):
         for field in self.TIMESTAMP_FIELDS:
             if field in data:
                 value = data[field]
-                if isinstance(value, (int, float)):
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
                     if value > 1e12:
-                        return datetime.fromtimestamp(value / 1000)
-                    return datetime.fromtimestamp(value)
+                        seconds = value / 1000
+                    else:
+                        seconds = value
+                    try:
+                        return datetime.fromtimestamp(seconds)
+                    except (ValueError, OverflowError, OSError):
+                        # Out-of-range epoch (year > 9999, year < 1, or
+                        # seconds too large for the platform time_t) — the
+                        # line is still useful for level/message metadata,
+                        # so return None here and let the caller log a
+                        # timestamp-less entry instead of crashing.
+                        return None
                 if isinstance(value, str):
-                    return self._parse_timestamp_string(value)
+                    parsed = self._parse_timestamp_string(value)
+                    if parsed is not None:
+                        return parsed
         return None
     
     def _parse_timestamp_string(self, ts_str: str) -> Optional[datetime]:

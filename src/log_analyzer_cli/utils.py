@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import gzip
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, Optional
 
@@ -20,6 +20,7 @@ def parse_timestamp(line: str) -> Optional[datetime]:
     """
     timestamp_patterns = [
         r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?",
+        r"\d{4}/\d{2}/\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?",
         r"\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}",
         r"[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}",
     ]
@@ -145,6 +146,15 @@ def detect_log_level(line: str) -> str:
     return "UNKNOWN"
 
 
+def _normalize_timestamp(timestamp: Optional[datetime]) -> Optional[datetime]:
+    """Return a timestamp that can be compared with naive or aware values."""
+    if timestamp is None:
+        return None
+    if timestamp.tzinfo is None:
+        return timestamp.replace(tzinfo=timezone.utc)
+    return timestamp.astimezone(timezone.utc)
+
+
 def filter_lines(
     lines: Generator[str, None, None],
     include_levels: Optional[list[str]] = None,
@@ -185,11 +195,12 @@ def filter_lines(
             continue
         
         timestamp = parse_timestamp(line)
+        comparison_timestamp = _normalize_timestamp(timestamp)
         
-        if start_time and timestamp and timestamp < start_time:
+        if start_time and comparison_timestamp and comparison_timestamp < _normalize_timestamp(start_time):
             continue
         
-        if end_time and timestamp and timestamp > end_time:
+        if end_time and comparison_timestamp and comparison_timestamp > _normalize_timestamp(end_time):
             continue
         
         yield line_num, line, timestamp, level

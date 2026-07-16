@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 
@@ -137,6 +137,18 @@ class TestLogAnalyzer:
         assert result.time_distribution is not None
         assert len(result.time_distribution.entries) == 3
     
+    def test_analyze_does_not_reuse_error_groups(self):
+        analyzer = LogAnalyzer()
+
+        analyzer.analyze([
+            ParsedEntry(raw="Error 1", level="ERROR", message="Error 1"),
+        ])
+        result = analyzer.analyze([
+            ParsedEntry(raw="Info 1", level="INFO", message="Info 1"),
+        ])
+
+        assert result.error_groups == []
+
     def test_reset(self):
         analyzer = LogAnalyzer()
         entries = [
@@ -148,6 +160,56 @@ class TestLogAnalyzer:
         
         analyzer.reset()
         assert len(analyzer._error_patterns) == 0
+
+    def test_mixed_naive_and_aware_timestamps(self):
+        """A single log file can carry both naive and tz-aware timestamps.
+
+        The previous code fed the raw ``entry.timestamp`` values to ``sorted``,
+        ``min``/``max``, and ``<``/``>`` comparisons. Python rejects comparing
+        offset-naive and offset-aware datetimes with ``TypeError: can't
+        compare offset-naive and offset-aware datetimes``, which crashed
+        ``TimeDistribution`` construction and error-group first/last_seen
+        computation. The fix normalizes a local copy of every timestamp to a
+        common tz-awareness (UTC for naive baselines) before sorting or
+        comparing, while leaving the original ``entry.timestamp`` on each
+        ``ParsedEntry`` untouched.
+        """
+        from log_analyzer_cli.analyzer import _normalize_timestamp
+
+        naive = datetime(2026, 4, 20, 10, 30, 0)
+        aware = datetime(2026, 4, 20, 10, 30, 5, tzinfo=timezone.utc)
+
+        # Sorted: should not raise, and the naive value should be promoted
+        # to UTC, not reordered behind the aware one
+        assert sorted([aware, naive], key=_normalize_timestamp) == [naive, aware]
+
+        # Min/max: same
+        assert min([aware, naive], key=_normalize_timestamp) == naive
+        assert max([aware, naive], key=_normalize_timestamp) == aware
+
+        # Time distribution on a mix: should not raise
+        entries = [
+            ParsedEntry(raw="naive line", timestamp=naive, level="INFO", message="naive"),
+            ParsedEntry(raw="aware line", timestamp=aware, level="INFO", message="aware"),
+        ]
+        result = LogAnalyzer().analyze(entries)
+        assert result.time_distribution is not None
+        assert len(result.time_distribution.entries) == 2
+        # The first entry should still be the naive one (UTC-promoted),
+        # proving the sort key honored the original order
+        assert result.time_distribution.entries[0] == naive.replace(tzinfo=timezone.utc)
+        assert result.time_distribution.entries[1] == aware
+
+        # Error grouping first/last_seen: should not raise
+        err_entries = [
+            ParsedEntry(raw="Error foo 1", timestamp=naive, level="ERROR", message="Error foo 1"),
+            ParsedEntry(raw="Error foo 2", timestamp=aware, level="ERROR", message="Error foo 2"),
+        ]
+        result = LogAnalyzer().analyze(err_entries, group_errors=True)
+        assert len(result.error_groups) == 1
+        group = result.error_groups[0]
+        assert group.first_seen == naive
+        assert group.last_seen == aware
 
 
 class TestAnalyzeLogEntries:

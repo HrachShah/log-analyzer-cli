@@ -127,7 +127,10 @@ class TestJSONLogParser:
         
         assert entry is not None
         assert entry.level == "ERROR"
-    
+        assert entry.timestamp is not None
+        assert entry.timestamp.tzinfo is not None
+        assert entry.timestamp.utcoffset().total_seconds() == 0
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         

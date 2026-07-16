@@ -137,6 +137,18 @@ class TestLogAnalyzer:
         assert result.time_distribution is not None
         assert len(result.time_distribution.entries) == 3
     
+    def test_analyze_does_not_reuse_error_groups(self):
+        analyzer = LogAnalyzer()
+
+        analyzer.analyze([
+            ParsedEntry(raw="Error 1", level="ERROR", message="Error 1"),
+        ])
+        result = analyzer.analyze([
+            ParsedEntry(raw="Info 1", level="INFO", message="Info 1"),
+        ])
+
+        assert result.error_groups == []
+
     def test_reset(self):
         analyzer = LogAnalyzer()
         entries = [

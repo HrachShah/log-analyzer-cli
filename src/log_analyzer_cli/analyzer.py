@@ -94,6 +94,7 @@ class LogAnalyzer:
         Returns:
             Analysis result.
         """
+        self.reset()
         result = AnalysisResult()
         result.total_lines = len(entries)
         result.parsed_entries = len(entries)

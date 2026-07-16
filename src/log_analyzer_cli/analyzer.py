@@ -4,11 +4,20 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers import ParsedEntry
 from log_analyzer_cli.utils import normalize_error_pattern
+
+
+def _normalize_timestamp(dt: Optional[datetime]) -> Optional[datetime]:
+    """Make naive timestamps comparable with timezone-aware timestamps."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 
 @dataclass
@@ -95,7 +104,7 @@ class LogAnalyzer:
         
         if timestamps:
             result.time_distribution = TimeDistribution(
-                entries=sorted(timestamps),
+                entries=sorted(timestamps, key=_normalize_timestamp),
                 interval_minutes=60,
             )
         
@@ -122,9 +131,12 @@ class LogAnalyzer:
         group.count += 1
         
         if entry.timestamp:
-            if group.first_seen is None or entry.timestamp < group.first_seen:
+            entry_timestamp = _normalize_timestamp(entry.timestamp)
+            first_seen = _normalize_timestamp(group.first_seen)
+            last_seen = _normalize_timestamp(group.last_seen)
+            if first_seen is None or entry_timestamp < first_seen:
                 group.first_seen = entry.timestamp
-            if group.last_seen is None or entry.timestamp > group.last_seen:
+            if last_seen is None or entry_timestamp > last_seen:
                 group.last_seen = entry.timestamp
         
         if len(group.sample_messages) < self.max_error_group_samples:

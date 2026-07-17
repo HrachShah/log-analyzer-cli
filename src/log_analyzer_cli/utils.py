@@ -4,9 +4,35 @@ from __future__ import annotations
 
 import gzip
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, Optional
+
+
+def _align_datetime_to_filter(timestamp, start_time=None, end_time=None):
+    """Align a parsed log timestamp to a CLI time filter.
+
+    A log file may contain both naive (``2025-03-20 10:15:32``) and aware
+    (``2025-03-20T10:15:33+00:00``) timestamps depending on the source. The
+    CLI parses ``--start-time`` / ``--end-time`` as naive datetimes, so
+    comparing an aware parsed timestamp against a naive filter (or vice
+    versa) raises ``TypeError: can't compare offset-naive and offset-aware
+    datetimes``. Normalise the parsed timestamp into the same tz-awareness
+    as the filter boundaries — strip tzinfo when either filter boundary is
+    naive, and attach UTC tzinfo when either boundary is aware. The original
+    parsed timestamp object is not modified.
+    """
+    if timestamp is None:
+        return None
+    if timestamp.tzinfo is None:
+        if (start_time is not None and start_time.tzinfo is not None) or \
+           (end_time is not None and end_time.tzinfo is not None):
+            return timestamp.replace(tzinfo=timezone.utc)
+        return timestamp
+    if (start_time is not None and start_time.tzinfo is None) or \
+       (end_time is not None and end_time.tzinfo is None):
+        return timestamp.replace(tzinfo=None)
+    return timestamp
 
 
 def parse_timestamp(line: str) -> Optional[datetime]:
@@ -109,11 +135,12 @@ def normalize_error_pattern(error_msg: str) -> str:
     # Replace paths
     pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
     
+    # Replace hex values before the generic number pass so 0x values stay
+    # grouped as one placeholder.
+    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
+
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)
-    
-    # Replace hex values
-    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
     
     return pattern
 
@@ -167,6 +194,20 @@ def filter_lines(
         Tuples of (line_number, line, timestamp, level).
     """
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
+    filter_times = (start_time, end_time)
+    if any(boundary is not None and boundary.tzinfo is not None for boundary in filter_times):
+        filter_times = tuple(
+            boundary.replace(tzinfo=timezone.utc)
+            if boundary is not None and boundary.tzinfo is None
+            else boundary
+            for boundary in filter_times
+        )
+    elif any(boundary is not None for boundary in filter_times):
+        filter_times = tuple(
+            boundary.replace(tzinfo=None) if boundary is not None else None
+            for boundary in filter_times
+        )
+    start_time, end_time = filter_times
     
     for line_num, line in enumerate(lines, 1):
         line = line.rstrip("\n\r")
@@ -185,6 +226,7 @@ def filter_lines(
             continue
         
         timestamp = parse_timestamp(line)
+        timestamp = _align_datetime_to_filter(timestamp, start_time, end_time)
         
         if start_time and timestamp and timestamp < start_time:
             continue

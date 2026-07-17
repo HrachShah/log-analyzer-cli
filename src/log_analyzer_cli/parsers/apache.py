@@ -29,7 +29,7 @@ class ApacheParser(LogParser):
         r'"(?P<request>[^"]+)"\s+'
         r'(?P<status>\d{3})\s+'
         r'(?P<size>\S+)'
-        r'(?:\s+"(?P<referer>[^"]+)"\s+"(?P<user_agent>[^"]+)")?'
+        r'(?:\s+"(?P<referer>[^"]*)"\s+"(?P<user_agent>[^"]*)")?'
         r'.*$'
     )
     

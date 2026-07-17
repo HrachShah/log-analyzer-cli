@@ -131,6 +131,14 @@ class TestApacheParser:
         assert entry is not None
         assert entry.level == "WARNING"
 
+    def test_parse_apache_request_level_when_status_is_missing(self):
+        parser = ApacheParser()
+        line = '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /error HTTP/1.1" - 2326'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.level == "ERROR"
+
 
 class TestGenericParser:
     """Tests for GenericParser."""

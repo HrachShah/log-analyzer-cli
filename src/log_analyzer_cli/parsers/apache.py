@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
+from log_analyzer_cli.utils import detect_log_level
 
 
 class ApacheParser(LogParser):
@@ -27,7 +28,7 @@ class ApacheParser(LogParser):
         r'(?P<user>\s+)'
         r'\[(?P<timestamp>[^\]]+)\]\s+'
         r'"(?P<request>[^"]+)"\s+'
-        r'(?P<status>\d{3})\s+'
+        r'(?P<status>\S+)\s+'
         r'(?P<size>\S+)'
         r'(?:\s+"(?P<referer>[^"]+)"\s+"(?P<user_agent>[^"]+)")?'
         r'.*$'
@@ -39,7 +40,7 @@ class ApacheParser(LogParser):
         r'(?P<user>\S+)\s+'
         r'\[(?P<timestamp>[^\]]+)\]\s+'
         r'"(?P<request>[^"]+)"\s+'
-        r'(?P<status>\d{3})\s+'
+        r'(?P<status>\S+)\s+'
         r'(?P<size>\S+)'
         r'.*$'
     )
@@ -69,16 +70,17 @@ class ApacheParser(LogParser):
         timestamp = self._parse_timestamp(groups.get("timestamp", ""))
         
         status = groups.get("status", "")
-        if status:
+        try:
             status_int = int(status)
+        except (TypeError, ValueError):
+            level = detect_log_level(groups.get("request", ""))
+        else:
             if status_int >= 500:
                 level = "ERROR"
             elif status_int >= 400:
                 level = "WARNING"
             else:
                 level = "INFO"
-        else:
-            level = "UNKNOWN"
         
         metadata = {
             "host": groups.get("host", ""),

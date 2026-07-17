@@ -160,13 +160,12 @@ def _get_parser(format_name: str, file_path: Path):
     
     sample_lines = []
     try:
-        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-            for i, line in enumerate(f):
-                if i >= 10:
-                    break
-                line = line.strip()
-                if line:
-                    sample_lines.append(line)
+        for i, line in enumerate(read_log_file(file_path)):
+            if i >= 10:
+                break
+            line = line.strip()
+            if line:
+                sample_lines.append(line)
     except OSError as e:
         click.echo(f"Warning: Could not read file: {e}", err=True)
         return None

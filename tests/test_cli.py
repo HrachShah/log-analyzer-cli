@@ -84,6 +84,16 @@ class TestCLI:
         )
         assert result.exit_code == 0
     
+    def test_analyze_auto_format_detection_for_gzip(self, runner, examples_dir, tmp_path):
+        import gzip
+
+        source = examples_dir / "app-json.log"
+        compressed = tmp_path / "app-json.log.gz"
+        compressed.write_bytes(gzip.compress(source.read_bytes()))
+        result = runner.invoke(main, ["analyze", str(compressed), "--format", "auto"])
+        assert result.exit_code == 0
+        assert "LOG ANALYSIS REPORT" in result.output
+
     def test_analyze_auto_format_detection(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "--format", "auto"])
         assert result.exit_code == 0

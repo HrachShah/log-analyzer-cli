@@ -140,6 +140,14 @@ class TestApacheParser:
         assert entry.level == "ERROR"
 
 
+class TestJSONLogParser:
+    def test_parse_rejects_valid_json_scalars(self):
+        parser = JSONLogParser()
+        assert parser.parse("[]") is None
+        assert parser.parse("null") is None
+        assert parser.parse('"message"') is None
+
+
 class TestGenericParser:
     """Tests for GenericParser."""
     

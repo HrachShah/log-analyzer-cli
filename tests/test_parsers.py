@@ -116,6 +116,8 @@ class TestApacheParser:
         assert entry.timestamp is not None
         assert entry.level == "INFO"
         assert entry.metadata["status"] == "200"
+        assert entry.metadata["referer"] == "-"
+        assert entry.metadata["user_agent"] == "Mozilla/5.0"
     
     def test_parse_apache_error_status(self):
         parser = ApacheParser()

@@ -91,3 +91,8 @@ class TestFilterLinesTimezone:
         end = datetime(2025, 1, 2, 0, 0, 0)
         result = list(filter_lines(lines, start_time=start, end_time=end))
         assert len(result) == 1
+
+def test_normalize_error_pattern_keeps_hex_values_together():
+    from log_analyzer_cli.utils import normalize_error_pattern
+
+    assert normalize_error_pattern("invalid value 0xDEADBEEF") == "invalid value <HEX>"

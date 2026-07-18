@@ -19,7 +19,7 @@ from log_analyzer_cli.parsers import (
     get_all_parsers,
     get_parser_for_format,
 )
-from log_analyzer_cli.utils import read_log_file
+from log_analyzer_cli.utils import _comparable_timestamp, read_log_file
 
 
 @click.group()
@@ -214,9 +214,9 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
+        if timestamp and start_time and _comparable_timestamp(timestamp, start_time) < start_time:
             continue
-        if end_time and timestamp and timestamp > end_time:
+        if timestamp and end_time and _comparable_timestamp(timestamp, end_time) > end_time:
             continue
         
         parsed = parser.parse(line)

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import gzip
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, Optional
 
@@ -36,26 +36,34 @@ def parse_timestamp(line: str) -> Optional[datetime]:
 
 def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
     """Try to parse a datetime string with various formats."""
+    if ts_str.endswith("Z"):
+        ts_str = ts_str[:-1] + "+00:00"
+
+    try:
+        return datetime.fromisoformat(ts_str)
+    except ValueError:
+        pass
+
     formats = [
-        "%Y-%m-%d %H:%M:%S.%f",
-        "%Y-%m-%dT%H:%M:%S.%f",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S%z",
         "%d/%b/%Y:%H:%M:%S",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
     ]
-    
-    if ts_str.endswith("Z"):
-        ts_str = ts_str[:-1] + "+00:00"
-    
     for fmt in formats:
         try:
             return datetime.strptime(ts_str, fmt)
         except ValueError:
             continue
     return None
+
+
+def _comparable_timestamp(timestamp: datetime, boundary: datetime) -> datetime:
+    """Align timestamp awareness before comparing log entries with filters."""
+    if timestamp.tzinfo is None and boundary.tzinfo is not None:
+        return timestamp.replace(tzinfo=timezone.utc)
+    if timestamp.tzinfo is not None and boundary.tzinfo is None:
+        return timestamp.replace(tzinfo=None)
+    return timestamp
 
 
 def read_log_file(file_path: str | Path) -> Generator[str, None]:
@@ -186,10 +194,9 @@ def filter_lines(
         
         timestamp = parse_timestamp(line)
         
-        if start_time and timestamp and timestamp < start_time:
+        if timestamp and start_time and _comparable_timestamp(timestamp, start_time) < start_time:
             continue
-        
-        if end_time and timestamp and timestamp > end_time:
+        if timestamp and end_time and _comparable_timestamp(timestamp, end_time) > end_time:
             continue
         
         yield line_num, line, timestamp, level

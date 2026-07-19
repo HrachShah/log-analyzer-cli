@@ -80,6 +80,11 @@ class TestJSONLogParser:
         assert parser.parse('"message"') is None
         assert parser.parse('null') is None
 
+    def test_parse_json_rejects_scalar_records(self):
+        parser = JSONLogParser()
+        for line in ["null", "[]", "42", '"message"']:
+            assert parser.parse(line) is None
+
     def test_parse_json_with_numeric_timestamp(self):
         parser = JSONLogParser()
         line = '{"timestamp": 1647780800000, "level": "ERROR", "message": "Failed"}'

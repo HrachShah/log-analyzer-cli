@@ -98,6 +98,17 @@ class TestJSONLogParser:
         assert entry is not None
         assert entry.timestamp is None
 
+    def test_parse_json_uses_later_timestamp_field_when_first_is_invalid(self):
+        parser = JSONLogParser()
+        entry = parser.parse(
+            '{"timestamp": "not-a-timestamp", "time": "2025-03-20T10:15:32Z", '
+            '"level": "INFO", "message": "Started"}'
+        )
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.isoformat() == "2025-03-20T10:15:32+00:00"
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         

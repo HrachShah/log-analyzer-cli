@@ -83,9 +83,11 @@ class JSONLogParser(LogParser):
                             return datetime.fromtimestamp(value / 1000)
                         return datetime.fromtimestamp(value)
                     except (OSError, OverflowError, ValueError):
-                        return None
+                        continue
                 if isinstance(value, str):
-                    return self._parse_timestamp_string(value)
+                    timestamp = self._parse_timestamp_string(value)
+                    if timestamp is not None:
+                        return timestamp
         return None
     
     def _parse_timestamp_string(self, ts_str: str) -> Optional[datetime]:

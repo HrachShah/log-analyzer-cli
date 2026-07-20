@@ -126,6 +126,10 @@ class TestApacheParser:
         parser = ApacheParser()
         line = '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "-" "Mozilla/5.0"'
         assert parser.can_parse(line) is True
+    def test_can_parse_combined_format_with_missing_ident(self):
+        parser = ApacheParser()
+        line = '192.168.1.10 - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "-" "Mozilla/5.0"'
+        assert parser.can_parse(line) is True
     
     def test_can_parse_common_format(self):
         parser = ApacheParser()

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from log_analyzer_cli.utils import detect_log_level
+from log_analyzer_cli.utils import detect_log_level, parse_timestamp
 
 
 pytestmark = pytest.mark.unit
@@ -72,3 +72,19 @@ def test_detect_log_level_case_insensitive():
     assert detect_log_level("error something") == "ERROR"
     assert detect_log_level("warning something") == "WARNING"
     assert detect_log_level("Info something") == "INFO"
+
+
+def test_parse_timestamp_preserves_fractional_timezone_offsets():
+    """ISO timestamps with fractions and offsets remain timezone-aware."""
+    parsed = parse_timestamp("2025-03-20T10:15:32.123+02:00 INFO started")
+
+    assert parsed is not None
+    assert parsed.isoformat() == "2025-03-20T10:15:32.123000+02:00"
+
+
+def test_parse_timestamp_accepts_fractional_utc_marker():
+    """Millisecond timestamps ending in Z parse as UTC."""
+    parsed = parse_timestamp("2025-03-20T10:15:32.123Z INFO started")
+
+    assert parsed is not None
+    assert parsed.isoformat() == "2025-03-20T10:15:32.123000+00:00"

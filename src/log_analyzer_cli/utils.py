@@ -39,6 +39,8 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
     formats = [
         "%Y-%m-%d %H:%M:%S.%f",
         "%Y-%m-%dT%H:%M:%S.%f",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S.%f%z",
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%dT%H:%M:%S%z",
@@ -119,7 +121,9 @@ def normalize_error_pattern(error_msg: str) -> str:
 
 
 def detect_log_level(line: str) -> str:
-    """Detect log level from a log line.
+    """
+    Detect the log level from a log line by locating the level keyword
+    that appears earliest in the line.
     
     Args:
         line: A log line.
@@ -138,9 +142,19 @@ def detect_log_level(line: str) -> str:
         (r'\bTRACE\b|\bTRC\b', "TRACE"),
     ]
     
+    earliest_level = None
+    earliest_index = float('inf')
+    
     for pattern, level in level_patterns:
-        if re.search(pattern, line_upper):
-            return level
+        matches = list(re.finditer(pattern, line_upper))
+        if matches:
+            first_match = matches[0]
+            if first_match.start() < earliest_index:
+                earliest_index = first_match.start()
+                earliest_level = level
+    
+    if earliest_level:
+        return earliest_level
     
     return "UNKNOWN"
 

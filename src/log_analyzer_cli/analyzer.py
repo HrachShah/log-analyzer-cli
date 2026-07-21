@@ -77,6 +77,7 @@ class LogAnalyzer:
         self._error_patterns = {}
 
         result = AnalysisResult()
+        self._error_patterns.clear()
         result.total_lines = len(entries)
         result.parsed_entries = len(entries)
         

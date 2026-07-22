@@ -8,6 +8,12 @@ import pytest
 
 from log_analyzer_cli.analyzer import ErrorGroup, LogAnalyzer, analyze_log_entries
 from log_analyzer_cli.parsers import ParsedEntry
+from log_analyzer_cli.utils import normalize_error_pattern
+
+
+class TestNormalizeErrorPattern:
+    def test_hex_values_are_replaced_as_one_token(self):
+        assert normalize_error_pattern("invalid checksum 0xdeadbeef") == "invalid checksum <HEX>"
 
 
 class TestLogAnalyzer:

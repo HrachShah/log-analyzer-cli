@@ -110,6 +110,10 @@ class TestJSONLogParser:
         line = "2025-03-20 10:15:32 systemkernel: Message"
         assert parser.can_parse(line) is False
     
+    def test_parse_json_array_returns_no_entry(self):
+        parser = JSONLogParser()
+        assert parser.parse('[{"message": "not a log object"}]') is None
+    
     def test_parse_json_line(self):
         parser = JSONLogParser()
         line = '{"timestamp": "2025-03-20T10:15:32.123Z", "level": "INFO", "message": "Started"}'

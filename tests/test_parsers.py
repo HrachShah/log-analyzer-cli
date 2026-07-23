@@ -73,6 +73,10 @@ class TestJSONLogParser:
         assert entry.timestamp is not None
         assert entry.level == "INFO"
         assert entry.message == "Started"
+
+    def test_parse_json_array_returns_no_entry(self):
+        parser = JSONLogParser()
+        assert parser.parse('[{"level": "ERROR", "message": "Failed"}]') is None
     
     def test_parse_json_with_numeric_timestamp(self):
         parser = JSONLogParser()

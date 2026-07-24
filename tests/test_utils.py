@@ -96,3 +96,12 @@ def test_normalize_error_pattern_keeps_hex_values_together():
     from log_analyzer_cli.utils import normalize_error_pattern
 
     assert normalize_error_pattern("invalid value 0xDEADBEEF") == "invalid value <HEX>"
+
+
+def test_parse_timestamp_accepts_space_before_timezone_offset():
+    from log_analyzer_cli.utils import parse_timestamp
+
+    timestamp = parse_timestamp("2025-03-20 10:15:32+02:00 INFO started")
+
+    assert timestamp is not None
+    assert timestamp.isoformat() == "2025-03-20T10:15:32+02:00"

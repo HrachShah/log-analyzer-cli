@@ -122,6 +122,15 @@ class TestApacheParser:
         assert entry.metadata["status"] == "200"
         assert entry.metadata["referer"] == "-"
         assert entry.metadata["user_agent"] == "Mozilla/5.0"
+
+    def test_parse_apache_strips_surrounding_whitespace(self):
+        parser = ApacheParser()
+        line = '  192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326  '
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.raw == line.strip()
+        assert entry.metadata["status"] == "200"
     
     def test_parse_apache_error_status(self):
         parser = ApacheParser()

@@ -57,6 +57,7 @@ class ApacheParser(LogParser):
     
     def parse(self, line: str) -> Optional[ParsedEntry]:
         """Parse an Apache/Nginx log line."""
+        line = line.strip()
         match = self.COMBINED_PATTERN.match(line)
         if not match:
             match = self.COMMON_PATTERN.match(line)
@@ -88,9 +89,9 @@ class ApacheParser(LogParser):
             "size": groups.get("size", ""),
         }
         
-        if groups.get("referer"):
+        if groups.get("referer") is not None:
             metadata["referer"] = groups["referer"]
-        if groups.get("user_agent"):
+        if groups.get("user_agent") is not None:
             metadata["user_agent"] = groups["user_agent"]
         
         message = f"{groups.get('request', '')} - Status: {status}"

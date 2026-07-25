@@ -175,6 +175,14 @@ class TestTimestampUtils:
         assert timestamp is not None
         assert timestamp.isoformat() == "2025-03-20T10:15:32+02:30"
 
+    def test_parse_timestamp_accepts_compact_timezone_offset(self):
+        from log_analyzer_cli.utils import parse_timestamp
+
+        timestamp = parse_timestamp("2025-03-20T10:15:32+0230 INFO Started")
+
+        assert timestamp is not None
+        assert timestamp.isoformat() == "2025-03-20T10:15:32+02:30"
+
 
 def test_normalize_error_pattern_preserves_hex_placeholder():
     from log_analyzer_cli.utils import normalize_error_pattern

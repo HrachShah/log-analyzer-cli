@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 from typing import Optional
@@ -19,7 +20,7 @@ from log_analyzer_cli.parsers import (
     get_all_parsers,
     get_parser_for_format,
 )
-from log_analyzer_cli.utils import read_log_file
+from log_analyzer_cli.utils import parse_timestamp, read_log_file
 
 
 @click.group()
@@ -135,7 +136,7 @@ def analyze(
         
     except (KeyboardInterrupt, SystemExit):
         raise
-    except (OSError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError, re.error) as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
 
@@ -195,8 +196,7 @@ def _parse_file(
     entries = []
     
     from log_analyzer_cli.parsers import ParsedEntry
-    from log_analyzer_cli.utils import detect_log_level, parse_timestamp
-    import re
+    from log_analyzer_cli.utils import detect_log_level
     
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
     

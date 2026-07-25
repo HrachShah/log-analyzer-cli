@@ -105,3 +105,12 @@ def test_parse_timestamp_accepts_space_before_timezone_offset():
 
     assert timestamp is not None
     assert timestamp.isoformat() == "2025-03-20T10:15:32+02:00"
+
+
+def test_parse_timestamp_preserves_fractional_seconds_with_timezone():
+    from log_analyzer_cli.utils import parse_timestamp
+
+    timestamp = parse_timestamp("2025-03-20T10:15:32.123Z INFO started")
+
+    assert timestamp is not None
+    assert timestamp.isoformat() == "2025-03-20T10:15:32.123000+00:00"

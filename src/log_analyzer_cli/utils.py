@@ -106,16 +106,16 @@ def normalize_error_pattern(error_msg: str) -> str:
     
     # Replace UUIDs
     pattern = re.sub(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', '<UUID>', pattern)
-    
+
+    # Replace hex values before replacing remaining standalone numbers.
+    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
+
     # Replace paths
     pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
-    
+
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)
-    
-    # Replace hex values
-    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
-    
+
     return pattern
 
 

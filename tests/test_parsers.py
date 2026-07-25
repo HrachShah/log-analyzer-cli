@@ -176,6 +176,12 @@ class TestTimestampUtils:
         assert timestamp.isoformat() == "2025-03-20T10:15:32+02:30"
 
 
+def test_normalize_error_pattern_preserves_hex_placeholder():
+    from log_analyzer_cli.utils import normalize_error_pattern
+
+    assert normalize_error_pattern("request failed with code 0x1234") == "request failed with code <HEX>"
+
+
 class TestParserUtils:
     """Tests for parser utility functions."""
     

@@ -88,6 +88,15 @@ class TestJSONLogParser:
         assert entry.timestamp.tzinfo is not None
         assert entry.timestamp.utcoffset().total_seconds() == 0
 
+    def test_parse_json_ignores_boolean_timestamp(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": true, "level": "INFO", "message": "Started"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.message == "Started"
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         

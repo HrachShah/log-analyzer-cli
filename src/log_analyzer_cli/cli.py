@@ -183,6 +183,24 @@ def _get_parser(format_name: str, file_path: Path):
     return GenericParser()
 
 
+def _align_timestamp_timezone(timestamp: datetime, boundary: datetime) -> tuple[datetime, datetime]:
+    if timestamp.tzinfo is None and boundary.tzinfo is not None:
+        timestamp = timestamp.replace(tzinfo=boundary.tzinfo)
+    elif timestamp.tzinfo is not None and boundary.tzinfo is None:
+        boundary = boundary.replace(tzinfo=timestamp.tzinfo)
+    return timestamp, boundary
+
+
+def _timestamp_before(timestamp: datetime, boundary: datetime) -> bool:
+    timestamp, boundary = _align_timestamp_timezone(timestamp, boundary)
+    return timestamp < boundary
+
+
+def _timestamp_after(timestamp: datetime, boundary: datetime) -> bool:
+    timestamp, boundary = _align_timestamp_timezone(timestamp, boundary)
+    return timestamp > boundary
+
+
 def _parse_file(
     parser,
     file_path: Path,
@@ -213,15 +231,17 @@ def _parse_file(
         if compiled_pattern and not compiled_pattern.search(line):
             continue
         
-        timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
-            continue
-        if end_time and timestamp and timestamp > end_time:
-            continue
-        
         parsed = parser.parse(line)
-        if parsed:
-            entries.append(parsed)
+        if not parsed:
+            continue
+
+        timestamp = parsed.timestamp or parse_timestamp(line)
+        if start_time and timestamp and _timestamp_before(timestamp, start_time):
+            continue
+        if end_time and timestamp and _timestamp_after(timestamp, end_time):
+            continue
+
+        entries.append(parsed)
     
     return entries
 

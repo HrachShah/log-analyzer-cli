@@ -74,6 +74,15 @@ class TestJSONLogParser:
         assert entry.level == "INFO"
         assert entry.message == "Started"
     
+    def test_parse_json_ignores_out_of_range_numeric_timestamp(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": 1e309, "level": "ERROR", "message": "Failed"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+
     def test_parse_json_with_numeric_timestamp(self):
         parser = JSONLogParser()
         line = '{"timestamp": 1647780800000, "level": "ERROR", "message": "Failed"}'

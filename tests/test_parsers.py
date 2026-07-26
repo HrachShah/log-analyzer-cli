@@ -74,6 +74,13 @@ class TestJSONLogParser:
         assert entry.level == "INFO"
         assert entry.message == "Started"
     
+    @pytest.mark.parametrize("line", ["[]", "null", "42", "\"message\""])
+    def test_parse_json_rejects_non_object_records(self, line):
+        parser = JSONLogParser()
+
+        assert parser.can_parse(line) is False
+        assert parser.parse(line) is None
+
     def test_parse_json_ignores_out_of_range_numeric_timestamp(self):
         parser = JSONLogParser()
         line = '{"timestamp": 1e309, "level": "ERROR", "message": "Failed"}'

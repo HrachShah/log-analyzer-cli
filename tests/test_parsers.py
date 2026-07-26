@@ -88,6 +88,18 @@ class TestJSONLogParser:
         assert entry.timestamp.tzinfo is not None
         assert entry.timestamp.utcoffset().total_seconds() == 0
 
+    @pytest.mark.parametrize("value", [True, 1e100])
+    def test_parse_json_ignores_invalid_numeric_timestamps(self, value):
+        parser = JSONLogParser()
+        entry = parser.parse(
+            f'{{"timestamp": {str(value).lower() if isinstance(value, bool) else value}, '
+            '"level": "INFO", "message": "Still useful"}'
+        )
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.message == "Still useful"
+
     def test_parse_json_ignores_boolean_timestamp(self):
         parser = JSONLogParser()
         line = '{"timestamp": true, "level": "INFO", "message": "Started"}'

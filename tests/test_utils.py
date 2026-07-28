@@ -17,3 +17,11 @@ def test_filter_lines_compares_naive_entries_with_aware_bounds():
         end_time=datetime(2025, 3, 20, 10, 15, 32, tzinfo=timezone.utc),
     ))
     assert len(result) == 1
+
+
+def test_filter_lines_preserves_aware_timestamp_instant_for_naive_bounds():
+    result = list(filter_lines(
+        iter(["2025-03-20T10:15:32+02:00 host process: message"]),
+        end_time=datetime(2025, 3, 20, 8, 0, 0),
+    ))
+    assert len(result) == 0

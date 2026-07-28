@@ -62,7 +62,7 @@ def _comparable_timestamp(timestamp: datetime, boundary: datetime) -> datetime:
     if timestamp.tzinfo is None and boundary.tzinfo is not None:
         return timestamp.replace(tzinfo=timezone.utc)
     if timestamp.tzinfo is not None and boundary.tzinfo is None:
-        return timestamp.replace(tzinfo=None)
+        return timestamp.astimezone(timezone.utc).replace(tzinfo=None)
     return timestamp
 
 

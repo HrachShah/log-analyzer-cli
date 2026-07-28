@@ -111,11 +111,11 @@ def normalize_error_pattern(error_msg: str) -> str:
     # Replace paths
     pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
     
+    # Replace hex values before replacing standalone numbers, so values such as 0x404 are grouped as one token.
+    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
+
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)
-    
-    # Replace hex values
-    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
     
     return pattern
 

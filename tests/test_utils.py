@@ -88,3 +88,10 @@ def test_parse_timestamp_accepts_fractional_utc_marker():
 
     assert parsed is not None
     assert parsed.isoformat() == "2025-03-20T10:15:32.123000+00:00"
+
+
+def test_normalize_error_pattern_preserves_hex_values_as_one_token():
+    """Hexadecimal values should not be split by numeric normalisation."""
+    from log_analyzer_cli.utils import normalize_error_pattern
+
+    assert normalize_error_pattern("request failed with status 0x404") == "request failed with status <HEX>"

@@ -104,7 +104,7 @@ def normalize_error_pattern(error_msg: str) -> str:
     pattern = re.sub(r':\d+', ':<PORT>', pattern)
     
     # Replace UUIDs
-    pattern = re.sub(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', '<UUID>', pattern)
+    pattern = re.sub(r'[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}', '<UUID>', pattern)
     
     # Replace paths
     pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)

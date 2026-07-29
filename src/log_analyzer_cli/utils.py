@@ -43,6 +43,7 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
         "%d/%b/%Y:%H:%M:%S",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
@@ -197,10 +198,10 @@ def filter_lines(
         timestamp = parse_timestamp(line)
         comparison_timestamp = _normalize_timestamp(timestamp)
         
-        if start_time and comparison_timestamp and comparison_timestamp < _normalize_timestamp(start_time):
+        if start_time and (comparison_timestamp is None or comparison_timestamp < _normalize_timestamp(start_time)):
             continue
         
-        if end_time and comparison_timestamp and comparison_timestamp > _normalize_timestamp(end_time):
+        if end_time and (comparison_timestamp is None or comparison_timestamp > _normalize_timestamp(end_time)):
             continue
         
         yield line_num, line, timestamp, level

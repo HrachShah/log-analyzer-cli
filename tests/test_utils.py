@@ -27,3 +27,17 @@ def test_parse_timestamp_accepts_slash_separated_iso_timestamp():
     parsed = parse_timestamp("2026/04/20 10:30:00 INFO started")
 
     assert parsed == datetime(2026, 4, 20, 10, 30, 0)
+
+
+def test_time_filters_exclude_entries_without_timestamps():
+    lines = iter([
+        "INFO no timestamp",
+        "2026-04-20 10:30:00 INFO timestamped",
+    ])
+    boundary = datetime(2026, 4, 20, 10, 30, 0, tzinfo=timezone.utc)
+
+    filtered = list(filter_lines(lines, start_time=boundary, end_time=boundary))
+
+    assert [line for _, line, _, _ in filtered] == [
+        "2026-04-20 10:30:00 INFO timestamped",
+    ]

@@ -82,6 +82,16 @@ class TestJSONLogParser:
         assert entry is not None
         assert entry.level == "ERROR"
     
+    @pytest.mark.parametrize("timestamp", [10**1000, -(10**1000), 1e30])
+    def test_parse_json_ignores_unrepresentable_numeric_timestamp(self, timestamp):
+        parser = JSONLogParser()
+        line = f'{{"timestamp": {timestamp!r}, "level": "INFO", "message": "Started"}}'
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         

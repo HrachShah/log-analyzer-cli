@@ -16,7 +16,7 @@ class ParsedEntry:
     level: str = "UNKNOWN"
     message: str = ""
     source: Optional[str] = None
-    metadata: dict = None
+    metadata: dict | None = None
     
     def __post_init__(self):
         if self.metadata is None:

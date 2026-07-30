@@ -76,9 +76,12 @@ class JSONLogParser(LogParser):
             if field in data:
                 value = data[field]
                 if isinstance(value, (int, float)):
-                    if value > 1e12:
-                        return datetime.fromtimestamp(value / 1000)
-                    return datetime.fromtimestamp(value)
+                    try:
+                        if value > 1e12:
+                            return datetime.fromtimestamp(value / 1000)
+                        return datetime.fromtimestamp(value)
+                    except (OverflowError, OSError, ValueError):
+                        pass
                 if isinstance(value, str):
                     return self._parse_timestamp_string(value)
         return None

@@ -76,6 +76,18 @@ class TestLogAnalyzer:
         assert len(result.error_groups) > 0
         assert result.error_groups[0].count == 3
     
+    def test_error_grouping_normalizes_hex_values(self):
+        analyzer = LogAnalyzer()
+        entries = [
+            ParsedEntry(raw="Error at 0x1234", level="ERROR", message="Error at 0x1234"),
+            ParsedEntry(raw="Error at 0xabcd", level="ERROR", message="Error at 0xabcd"),
+        ]
+
+        result = analyzer.analyze(entries, group_errors=True)
+
+        assert len(result.error_groups) == 1
+        assert result.error_groups[0].count == 2
+
     def test_error_grouping_similar_messages(self):
         analyzer = LogAnalyzer()
         entries = [

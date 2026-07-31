@@ -109,11 +109,12 @@ def normalize_error_pattern(error_msg: str) -> str:
     # Replace paths
     pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
     
+    # Replace hex values before the numeric pass so their digits are not
+    # partially normalised into a different pattern.
+    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
+
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)
-    
-    # Replace hex values
-    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
     
     return pattern
 

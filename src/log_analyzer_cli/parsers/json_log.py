@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
@@ -78,7 +78,7 @@ class JSONLogParser(LogParser):
                 if isinstance(value, (int, float)) and not isinstance(value, bool):
                     try:
                         timestamp = value / 1000 if value > 1e12 else value
-                        return datetime.fromtimestamp(timestamp)
+                        return datetime.fromtimestamp(timestamp, tz=timezone.utc)
                     except (OverflowError, OSError, ValueError):
                         return None
                 if isinstance(value, str):

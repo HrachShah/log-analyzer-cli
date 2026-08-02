@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import timezone
+
 import pytest
 
 from log_analyzer_cli.parsers import (
@@ -109,6 +111,16 @@ class TestJSONLogParser:
         
         assert entry is not None
         assert entry.level == "ERROR"
+    def test_parse_json_numeric_timestamp_is_utc_aware(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": 1647780800000, "level": "INFO", "message": "Started"}'
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.tzinfo == timezone.utc
+
     @pytest.mark.parametrize("timestamp", [True, False, 10**400])
     def test_parse_json_ignores_invalid_numeric_timestamps(self, timestamp):
         parser = JSONLogParser()

@@ -95,6 +95,16 @@ class TestJSONLogParser:
             assert entry is not None
             assert entry.level == "ERROR"
 
+    def test_parse_timestamp_with_space_separated_offset(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": "2025-03-20 10:15:32+0530", "level": "INFO", "message": "Started"}'
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.utcoffset().total_seconds() == 19800
+
 
 class TestApacheParser:
     """Tests for ApacheParser."""

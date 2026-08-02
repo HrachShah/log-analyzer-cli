@@ -43,8 +43,8 @@ class JSONLogParser(LogParser):
         if not (line.startswith("{") and line.endswith("}")):
             return False
         try:
-            json.loads(line)
-            return True
+            data = json.loads(line)
+            return isinstance(data, dict) and bool(data)
         except json.JSONDecodeError:
             return False
     

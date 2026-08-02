@@ -56,6 +56,8 @@ class JSONLogParser(LogParser):
             return None
         if not isinstance(data, dict):
             return None
+        if not data:
+            return None
         
         timestamp = self._extract_timestamp(data)
         level = self._extract_level(data)

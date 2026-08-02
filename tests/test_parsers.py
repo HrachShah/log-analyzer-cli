@@ -74,7 +74,7 @@ class TestJSONLogParser:
         assert entry.level == "INFO"
         assert entry.message == "Started"
     
-    @pytest.mark.parametrize("line", ["[]", "null", "42", "\"message\""])
+    @pytest.mark.parametrize("line", ["[]", "null", "42", "\"message\"", "{}"])
     def test_parse_json_rejects_non_object_records(self, line):
         parser = JSONLogParser()
 

@@ -118,6 +118,7 @@ class SyslogParser(LogParser):
         formats = [
             "%b %d %H:%M:%S",
             "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S.%f%z",
             "%Y-%m-%dT%H:%M:%S.%f",
             "%Y-%m-%dT%H:%M:%S%z",
         ]

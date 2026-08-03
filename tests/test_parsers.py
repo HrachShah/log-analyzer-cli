@@ -50,6 +50,16 @@ class TestSyslogParser:
         assert entry.level == "ERROR"
         assert "Database connection failed" in entry.message
 
+    def test_parse_rfc5424_fractional_timezone(self):
+        parser = SyslogParser()
+        line = "2025-03-20T10:15:32.123+01:00 host app: Started"
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.isoformat() == "2025-03-20T10:15:32.123000+01:00"
+
 
 class TestJSONLogParser:
     """Tests for JSONLogParser."""

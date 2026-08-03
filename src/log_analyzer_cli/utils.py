@@ -146,6 +146,24 @@ def detect_log_level(line: str) -> str:
     return "UNKNOWN"
 
 
+def _align_timestamp_timezone(timestamp: datetime, boundary: datetime) -> tuple[datetime, datetime]:
+    if timestamp.tzinfo is None and boundary.tzinfo is not None:
+        timestamp = timestamp.replace(tzinfo=boundary.tzinfo)
+    elif timestamp.tzinfo is not None and boundary.tzinfo is None:
+        boundary = boundary.replace(tzinfo=timestamp.tzinfo)
+    return timestamp, boundary
+
+
+def _timestamp_before(timestamp: datetime, boundary: datetime) -> bool:
+    timestamp, boundary = _align_timestamp_timezone(timestamp, boundary)
+    return timestamp < boundary
+
+
+def _timestamp_after(timestamp: datetime, boundary: datetime) -> bool:
+    timestamp, boundary = _align_timestamp_timezone(timestamp, boundary)
+    return timestamp > boundary
+
+
 def filter_lines(
     lines: Generator[str, None, None],
     include_levels: Optional[list[str]] = None,
@@ -187,10 +205,10 @@ def filter_lines(
         
         timestamp = parse_timestamp(line)
         
-        if start_time and timestamp and timestamp < start_time:
+        if start_time and timestamp and _timestamp_before(timestamp, start_time):
             continue
-        
-        if end_time and timestamp and timestamp > end_time:
+
+        if end_time and timestamp and _timestamp_after(timestamp, end_time):
             continue
         
         yield line_num, line, timestamp, level

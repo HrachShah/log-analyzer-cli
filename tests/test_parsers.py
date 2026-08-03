@@ -105,6 +105,16 @@ class TestJSONLogParser:
         assert entry.timestamp is not None
         assert entry.timestamp.utcoffset().total_seconds() == 19800
 
+    def test_parse_json_rejects_invalid_numeric_timestamp(self):
+        parser = JSONLogParser()
+
+        for value in [True, 10**1000, -10**1000]:
+            entry = parser.parse(
+                f'{{"timestamp": {str(value).lower() if isinstance(value, bool) else value}, "level": "INFO", "message": "Started"}}'
+            )
+            assert entry is not None
+            assert entry.timestamp is None
+
 
 class TestApacheParser:
     """Tests for ApacheParser."""

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 from click.testing import CliRunner
 
-from log_analyzer_cli.cli import main
+from log_analyzer_cli.cli import _parse_file, main
+from log_analyzer_cli.parsers import GenericParser
 
 
 class TestCLI:
@@ -84,6 +87,30 @@ class TestCLI:
         )
         assert result.exit_code == 0
     
+    def test_parse_file_handles_aware_timestamp_with_naive_filter(self, tmp_path):
+        path = tmp_path / "aware.log"
+        path.write_text("2025-03-20T10:15:32+01:00 INFO Application started\n")
+
+        entries = _parse_file(
+            GenericParser(),
+            path,
+            start_time=datetime(2025, 3, 20, 9, 15, 32),
+        )
+
+        assert len(entries) == 1
+
+    def test_parse_file_handles_naive_timestamp_with_aware_filter(self, tmp_path):
+        path = tmp_path / "naive.log"
+        path.write_text("2025-03-20 10:15:32 INFO Application started\n")
+
+        entries = _parse_file(
+            GenericParser(),
+            path,
+            start_time=datetime(2025, 3, 20, 10, 15, 32, tzinfo=timezone.utc),
+        )
+
+        assert len(entries) == 1
+
     def test_analyze_auto_format_detection(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "--format", "auto"])
         assert result.exit_code == 0

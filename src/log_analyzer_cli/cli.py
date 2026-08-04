@@ -19,7 +19,7 @@ from log_analyzer_cli.parsers import (
     get_all_parsers,
     get_parser_for_format,
 )
-from log_analyzer_cli.utils import read_log_file
+from log_analyzer_cli.utils import _normalise_datetime_pair, read_log_file
 
 
 @click.group()
@@ -214,10 +214,16 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
-            continue
-        if end_time and timestamp and timestamp > end_time:
-            continue
+        if timestamp is not None and start_time is not None:
+            comparable_timestamp, comparable_start = _normalise_datetime_pair(
+                timestamp, start_time
+            )
+            if comparable_timestamp < comparable_start:
+                continue
+        if timestamp is not None and end_time is not None:
+            comparable_timestamp, comparable_end = _normalise_datetime_pair(timestamp, end_time)
+            if comparable_timestamp > comparable_end:
+                continue
         
         parsed = parser.parse(line)
         if parsed:

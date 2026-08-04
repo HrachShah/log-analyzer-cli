@@ -4,9 +4,28 @@ from __future__ import annotations
 
 import gzip
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, Optional
+
+
+def _normalise_datetime_pair(
+    timestamp: datetime, boundary: datetime
+) -> tuple[datetime, datetime]:
+    """Make a timestamp and filter boundary comparable.
+
+    Naive timestamps are interpreted as UTC whenever either value carries
+    timezone information. This avoids Python's TypeError for mixed-aware
+    comparisons without silently discarding an offset from a parsed log.
+    """
+    if timestamp.tzinfo is None and boundary.tzinfo is None:
+        return timestamp, boundary
+
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=timezone.utc)
+    if boundary.tzinfo is None:
+        boundary = boundary.replace(tzinfo=timezone.utc)
+    return timestamp, boundary
 
 
 def parse_timestamp(line: str) -> Optional[datetime]:
@@ -186,11 +205,17 @@ def filter_lines(
             continue
         
         timestamp = parse_timestamp(line)
-        
-        if start_time and timestamp and timestamp < start_time:
-            continue
-        
-        if end_time and timestamp and timestamp > end_time:
-            continue
+
+        if timestamp is not None and start_time is not None:
+            comparable_timestamp, comparable_start = _normalise_datetime_pair(
+                timestamp, start_time
+            )
+            if comparable_timestamp < comparable_start:
+                continue
+
+        if timestamp is not None and end_time is not None:
+            comparable_timestamp, comparable_end = _normalise_datetime_pair(timestamp, end_time)
+            if comparable_timestamp > comparable_end:
+                continue
         
         yield line_num, line, timestamp, level

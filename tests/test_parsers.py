@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 
+from log_analyzer_cli.utils import parse_timestamp
 from log_analyzer_cli.parsers import (
     GenericParser,
     JSONLogParser,
@@ -144,6 +147,12 @@ class TestGenericParser:
         parser = GenericParser()
         line = "2025-03-20T10:15:32.123Z INFO Application started"
         assert parser.can_parse(line) is True
+
+    def test_parse_space_separated_timestamp_with_timezone_offset(self):
+        timestamp = parse_timestamp("2025-03-20 10:15:32 +01:00 INFO Application started")
+
+        assert timestamp is not None
+        assert timestamp.utcoffset() == timedelta(hours=1)
     
     def test_parse_generic_line(self):
         parser = GenericParser()

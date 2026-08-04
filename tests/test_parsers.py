@@ -91,6 +91,22 @@ class TestJSONLogParser:
             assert entry is not None
             assert entry.timestamp is None
 
+    def test_parse_json_uses_utc_for_numeric_timestamp(self):
+        parser = JSONLogParser()
+        entry = parser.parse('{"timestamp": 0, "message": "Started"}')
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.tzinfo is not None
+        assert entry.timestamp.utcoffset().total_seconds() == 0
+
+    def test_parse_json_ignores_invalid_numeric_timestamp(self):
+        parser = JSONLogParser()
+        entry = parser.parse('{"timestamp": 1e309, "message": "Started"}')
+
+        assert entry is not None
+        assert entry.timestamp is None
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         

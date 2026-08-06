@@ -150,6 +150,13 @@ class TestGenericParser:
         line = "2025-03-20T10:15:32.123Z INFO Application started"
         assert parser.can_parse(line) is True
 
+    def test_parse_iso_timestamp_with_fractional_seconds_and_timezone_offset(self):
+        timestamp = parse_timestamp("2025-03-20T10:15:32.123+01:00 INFO Application started")
+
+        assert timestamp is not None
+        assert timestamp.microsecond == 123000
+        assert timestamp.utcoffset() == timedelta(hours=1)
+    
     def test_parse_space_separated_timestamp_with_timezone_offset(self):
         timestamp = parse_timestamp("2025-03-20 10:15:32 +01:00 INFO Application started")
 

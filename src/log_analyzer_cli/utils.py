@@ -61,8 +61,10 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S.%f %z",
         "%Y-%m-%d %H:%M:%S %z",
         "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S.%f%z",
         "%d/%b/%Y:%H:%M:%S",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
@@ -76,7 +78,10 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
             return datetime.strptime(ts_str, fmt)
         except ValueError:
             continue
-    return None
+    try:
+        return datetime.fromisoformat(ts_str)
+    except ValueError:
+        return None
 
 
 def read_log_file(file_path: str | Path) -> Generator[str, None]:

@@ -181,6 +181,14 @@ class TestGenericParser:
         assert entry.level == "INFO"
         assert "Application started" in entry.message
 
+    def test_parse_generic_offset_timestamp_as_utc(self):
+        parser = GenericParser()
+        entry = parser.parse("2025-03-20T10:15:32+02:00 INFO Application started")
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.isoformat() == "2025-03-20T08:15:32+00:00"
+
 
 class TestParserUtils:
     """Tests for parser utility functions."""

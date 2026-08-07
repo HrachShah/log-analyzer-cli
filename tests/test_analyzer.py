@@ -87,6 +87,18 @@ class TestLogAnalyzer:
         result = analyzer.analyze(entries, group_errors=True)
         
         assert len(result.error_groups) >= 1
+
+    def test_error_grouping_preserves_hex_placeholder(self):
+        analyzer = LogAnalyzer()
+        entries = [
+            ParsedEntry(raw="Error 0x1a", level="ERROR", message="invalid value 0x1a"),
+            ParsedEntry(raw="Error 0xff", level="ERROR", message="invalid value 0xff"),
+        ]
+
+        result = analyzer.analyze(entries, group_errors=True)
+
+        assert len(result.error_groups) == 1
+        assert result.error_groups[0].pattern == "invalid value <HEX>"
     
     def test_no_error_grouping_when_disabled(self):
         analyzer = LogAnalyzer()

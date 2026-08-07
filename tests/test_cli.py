@@ -119,3 +119,20 @@ class TestCLI:
         assert result.exit_code == 0
         assert "analyze" in result.output
         assert "formats" in result.output
+
+
+    def test_analyze_rejects_reversed_time_range(self, runner, json_file):
+        result = runner.invoke(
+            main,
+            [
+                "analyze",
+                str(json_file),
+                "--start-time",
+                "2025-03-20 12:00:00",
+                "--end-time",
+                "2025-03-20 10:00:00",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "start-time must not be later than end-time" in result.output

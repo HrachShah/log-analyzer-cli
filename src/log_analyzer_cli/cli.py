@@ -121,6 +121,10 @@ def analyze(
         
         click.echo(f"Using parser: {parser.name}")
         
+        if start_dt and end_dt and start_dt > end_dt:
+            click.echo("Error: start-time must not be later than end-time", err=True)
+            sys.exit(1)
+
         entries = _parse_file(parser, file, level_filter, pattern, start_dt, end_dt)
         
         if not entries:

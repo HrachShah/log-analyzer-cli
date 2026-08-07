@@ -75,7 +75,7 @@ class JSONLogParser(LogParser):
         for field in self.TIMESTAMP_FIELDS:
             if field in data:
                 value = data[field]
-                if isinstance(value, (int, float)):
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
                     if value > 1e12:
                         return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
                     return datetime.fromtimestamp(value, tz=timezone.utc)

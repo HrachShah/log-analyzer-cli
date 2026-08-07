@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import json
 
 import pytest
 
@@ -87,6 +88,23 @@ class TestJSONLogParser:
         assert entry.timestamp is not None
         assert entry.timestamp.utcoffset() == timedelta(0)
     
+    @pytest.mark.parametrize("value", [True, False])
+    def test_parse_json_boolean_timestamp_as_missing(self, value):
+        parser = JSONLogParser()
+        entry = parser.parse(json.dumps({"timestamp": value, "level": "INFO", "message": "Started"}))
+
+        assert entry is not None
+        assert entry.timestamp is None
+
+    @pytest.mark.parametrize("value", [True, False])
+    def test_parse_json_ignores_boolean_timestamp(self, value):
+        parser = JSONLogParser()
+        entry = parser.parse(f'{{"timestamp": {str(value).lower()}, "level": "INFO", "message": "Started"}}')
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.message == "Started"
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         

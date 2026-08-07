@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import gzip
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Generator, Optional
 
@@ -52,7 +52,10 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
     
     for fmt in formats:
         try:
-            return datetime.strptime(ts_str, fmt)
+            parsed = datetime.strptime(ts_str, fmt)
+            if parsed.tzinfo is None:
+                return parsed
+            return parsed.astimezone(timezone.utc)
         except ValueError:
             continue
     return None

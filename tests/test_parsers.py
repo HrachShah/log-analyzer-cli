@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from log_analyzer_cli.utils import parse_timestamp
 from log_analyzer_cli.parsers import (
     GenericParser,
     JSONLogParser,
@@ -204,3 +205,27 @@ class TestParserUtils:
     def test_get_parser_for_format_invalid(self):
         parser_class = get_parser_for_format("invalid_format")
         assert parser_class is None
+
+
+def test_parse_timestamp_normalises_offsets_to_utc():
+    parsed = parse_timestamp("2025-03-20T10:15:32+02:00 INFO Started")
+
+    assert parsed is not None
+    assert parsed.isoformat() == "2025-03-20T08:15:32+00:00"
+
+
+def test_parse_timestamp_keeps_naive_timestamps_naive():
+    parsed = parse_timestamp("2025-03-20 10:15:32 INFO Started")
+
+    assert parsed is not None
+    assert parsed.tzinfo is None
+
+
+def test_generic_parser_normalises_offsets_to_utc():
+    from log_analyzer_cli.parsers import GenericParser
+
+    entry = GenericParser().parse("2025-03-20T10:15:32+02:00 INFO Started")
+
+    assert entry is not None
+    assert entry.timestamp is not None
+    assert entry.timestamp.isoformat() == "2025-03-20T08:15:32+00:00"

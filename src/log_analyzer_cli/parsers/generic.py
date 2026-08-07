@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
@@ -84,7 +84,8 @@ class GenericParser(LogParser):
         for fmt, has_tz in formats:
             try:
                 if has_tz:
-                    return datetime.strptime(ts_str_normalized, fmt)
+                    parsed = datetime.strptime(ts_str_normalized, fmt)
+                    return parsed.astimezone(timezone.utc)
                 else:
                     if "%b" in fmt:
                         dt = datetime.strptime(ts_str, fmt)

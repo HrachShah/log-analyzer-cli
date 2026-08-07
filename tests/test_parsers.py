@@ -117,6 +117,16 @@ class TestJSONLogParser:
         assert entry.timestamp is not None
         assert entry.timestamp.year == 2025
     
+    def test_parsed_entries_do_not_share_default_metadata(self):
+        parser = JSONLogParser()
+        first = parser.parse('{"message": "first"}')
+        second = parser.parse('{"message": "second"}')
+
+        assert first is not None
+        assert second is not None
+        first.metadata["request_id"] = "abc"
+        assert "request_id" not in second.metadata
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         

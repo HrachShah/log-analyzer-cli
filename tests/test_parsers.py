@@ -200,6 +200,16 @@ class TestGenericParser:
         assert entry.level == "INFO"
         assert "Application started" in entry.message
 
+    def test_parse_generic_timestamp_with_space_before_timezone(self):
+        parser = GenericParser()
+        line = "2025-03-20 10:15:32 +01:00 INFO Application started"
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.isoformat() == "2025-03-20T10:15:32+01:00"
+
 
 class TestParserUtils:
     """Tests for parser utility functions."""

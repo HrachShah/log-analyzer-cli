@@ -22,7 +22,7 @@ class GenericParser(LogParser):
     
     TIMESTAMP_REGEX = re.compile(
         r'(?P<timestamp>'
-        r'\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?|'
+        r'\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\s*[+-]\d{2}:?\d{2})?|'
         r'\d{2}/\w{3}/\d{4}:\d{2}:\d{2}:\d{2}\s+\w+|'
         r'\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}|'
         r'\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}|'
@@ -68,6 +68,8 @@ class GenericParser(LogParser):
             ("%Y-%m-%dT%H:%M:%S.%f", False),
             ("%Y-%m-%d %H:%M:%S", False),
             ("%Y-%m-%dT%H:%M:%S", False),
+            ("%Y-%m-%d %H:%M:%S.%f%z", True),
+            ("%Y-%m-%d %H:%M:%S%z", True),
             ("%Y-%m-%dT%H:%M:%S.%f%z", True),
             ("%Y-%m-%dT%H:%M:%S%z", True),
             ("%d/%b/%Y:%H:%M:%S %z", False),

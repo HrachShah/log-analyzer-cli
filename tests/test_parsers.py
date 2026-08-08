@@ -188,6 +188,15 @@ class TestGenericParser:
 
         assert timestamp is not None
         assert timestamp.utcoffset() == timedelta(hours=1)
+
+    def test_generic_parser_keeps_timezone_in_space_separated_timestamp(self):
+        entry = GenericParser().parse(
+            "2025-03-20 10:15:32 +01:00 INFO Application started"
+        )
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.utcoffset() == timedelta(hours=1)
     
     def test_parse_generic_line(self):
         parser = GenericParser()

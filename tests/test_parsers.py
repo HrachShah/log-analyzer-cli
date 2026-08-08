@@ -88,6 +88,14 @@ class TestJSONLogParser:
         assert entry.timestamp is not None
         assert entry.timestamp.utcoffset() == timedelta(0)
     
+    @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf"), 1e300])
+    def test_parse_json_invalid_numeric_timestamp_as_missing(self, value):
+        parser = JSONLogParser()
+        entry = parser.parse(json.dumps({"timestamp": value, "level": "INFO", "message": "Started"}, allow_nan=True))
+
+        assert entry is not None
+        assert entry.timestamp is None
+
     @pytest.mark.parametrize("value", [True, False])
     def test_parse_json_boolean_timestamp_as_missing(self, value):
         parser = JSONLogParser()

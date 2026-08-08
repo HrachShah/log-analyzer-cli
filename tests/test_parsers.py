@@ -100,6 +100,14 @@ class TestJSONLogParser:
         assert entry.timestamp is None
         assert entry.level == "ERROR"
 
+    def test_parse_json_ignores_nan_numeric_timestamp(self):
+        parser = JSONLogParser()
+        entry = parser.parse('{"timestamp": NaN, "level": "ERROR", "message": "Failed"}')
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+
     def test_parse_json_with_numeric_timestamp(self):
         parser = JSONLogParser()
         line = '{"timestamp": 1647780800000, "level": "ERROR", "message": "Failed"}'

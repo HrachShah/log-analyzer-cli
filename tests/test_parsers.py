@@ -50,6 +50,16 @@ class TestSyslogParser:
         assert entry.level == "ERROR"
         assert "Database connection failed" in entry.message
 
+    def test_parse_rfc5424_fractional_timezone(self):
+        parser = SyslogParser()
+        line = "2025-03-20T10:15:32.123+01:00 host app: Started"
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.isoformat() == "2025-03-20T10:15:32.123000+01:00"
+
 
 class TestJSONLogParser:
     """Tests for JSONLogParser."""
@@ -74,6 +84,30 @@ class TestJSONLogParser:
         assert entry.level == "INFO"
         assert entry.message == "Started"
     
+    @pytest.mark.parametrize("line", ["[]", "null", "42", "\"message\"", "{}"])
+    def test_parse_json_rejects_non_object_records(self, line):
+        parser = JSONLogParser()
+
+        assert parser.can_parse(line) is False
+        assert parser.parse(line) is None
+
+    def test_parse_json_ignores_out_of_range_numeric_timestamp(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": 1e309, "level": "ERROR", "message": "Failed"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+
+    def test_parse_json_ignores_nan_numeric_timestamp(self):
+        parser = JSONLogParser()
+        entry = parser.parse('{"timestamp": NaN, "level": "ERROR", "message": "Failed"}')
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.level == "ERROR"
+
     def test_parse_json_with_numeric_timestamp(self):
         parser = JSONLogParser()
         line = '{"timestamp": 1647780800000, "level": "ERROR", "message": "Failed"}'
@@ -81,7 +115,26 @@ class TestJSONLogParser:
         
         assert entry is not None
         assert entry.level == "ERROR"
+
+    def test_parse_json_uses_later_timestamp_field_when_first_is_invalid(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": "not-a-timestamp", "time": "2025-03-20T10:15:32Z", "message": "Started"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2025
     
+    def test_parsed_entries_do_not_share_default_metadata(self):
+        parser = JSONLogParser()
+        first = parser.parse('{"message": "first"}')
+        second = parser.parse('{"message": "second"}')
+
+        assert first is not None
+        assert second is not None
+        first.metadata["request_id"] = "abc"
+        assert "request_id" not in second.metadata
+
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()
         
@@ -154,6 +207,16 @@ class TestGenericParser:
         assert entry.timestamp is not None
         assert entry.level == "INFO"
         assert "Application started" in entry.message
+
+    def test_parse_generic_timestamp_with_space_before_timezone(self):
+        parser = GenericParser()
+        line = "2025-03-20 10:15:32 +01:00 INFO Application started"
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.isoformat() == "2025-03-20T10:15:32+01:00"
 
 
 class TestParserUtils:

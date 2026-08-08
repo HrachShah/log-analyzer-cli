@@ -83,6 +83,32 @@ class TestCLI:
             ["analyze", str(json_file), "--start-time", "2025-03-20 10:00:00"]
         )
         assert result.exit_code == 0
+
+    def test_analyze_time_filter_uses_json_timestamp(self, runner, tmp_path):
+        log_file = tmp_path / "timestamps.jsonl"
+        log_file.write_text(
+            '{"timestamp": "2025-03-20T09:59:59Z", "level": "INFO", "message": "old"}\n'
+            '{"timestamp": "2025-03-20T10:00:01Z", "level": "INFO", "message": "new"}\n'
+        )
+
+        result = runner.invoke(
+            main,
+            [
+                "analyze",
+                str(log_file),
+                "-f",
+                "json",
+                "-o",
+                "json",
+                "--start-time",
+                "2025-03-20 10:00:00",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert '"parsed_entries": 1' in result.output
+        assert '"start": "2025-03-20T10:00:01+00:00"' in result.output
+        assert "old" not in result.output
     
     def test_analyze_auto_format_detection(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "--format", "auto"])
@@ -93,3 +119,20 @@ class TestCLI:
         assert result.exit_code == 0
         assert "analyze" in result.output
         assert "formats" in result.output
+
+
+    def test_analyze_rejects_reversed_time_range(self, runner, json_file):
+        result = runner.invoke(
+            main,
+            [
+                "analyze",
+                str(json_file),
+                "--start-time",
+                "2025-03-20 12:00:00",
+                "--end-time",
+                "2025-03-20 10:00:00",
+            ],
+        )
+
+        assert result.exit_code == 1
+        assert "start-time must not be later than end-time" in result.output

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
@@ -43,8 +43,8 @@ class JSONLogParser(LogParser):
         if not (line.startswith("{") and line.endswith("}")):
             return False
         try:
-            json.loads(line)
-            return True
+            data = json.loads(line)
+            return isinstance(data, dict) and bool(data)
         except json.JSONDecodeError:
             return False
     
@@ -53,6 +53,10 @@ class JSONLogParser(LogParser):
         try:
             data = json.loads(line.strip())
         except json.JSONDecodeError:
+            return None
+        if not isinstance(data, dict):
+            return None
+        if not data:
             return None
         
         timestamp = self._extract_timestamp(data)
@@ -75,12 +79,19 @@ class JSONLogParser(LogParser):
         for field in self.TIMESTAMP_FIELDS:
             if field in data:
                 value = data[field]
-                if isinstance(value, (int, float)):
-                    if value > 1e12:
-                        return datetime.fromtimestamp(value / 1000)
-                    return datetime.fromtimestamp(value)
+                if isinstance(value, (int, float)) and not isinstance(value, bool):
+                    if isinstance(value, float) and not value == value:
+                        continue
+                    try:
+                        if value > 1e12:
+                            return datetime.fromtimestamp(value / 1000, tz=timezone.utc)
+                        return datetime.fromtimestamp(value, tz=timezone.utc)
+                    except (OverflowError, OSError, ValueError):
+                        continue
                 if isinstance(value, str):
-                    return self._parse_timestamp_string(value)
+                    parsed = self._parse_timestamp_string(value)
+                    if parsed is not None:
+                        return parsed
         return None
     
     def _parse_timestamp_string(self, ts_str: str) -> Optional[datetime]:

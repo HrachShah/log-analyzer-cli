@@ -19,7 +19,7 @@ def parse_timestamp(line: str) -> Optional[datetime]:
         Parsed datetime object or None if no timestamp found.
     """
     timestamp_patterns = [
-        r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?",
+        r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2}|\s+[+-]\d{2}:?\d{2})?",
         r"\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}",
         r"[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}",
     ]
@@ -42,6 +42,9 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%dT%H:%M:%S",
         "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S %z",
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S %z",
         "%d/%b/%Y:%H:%M:%S",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
@@ -104,16 +107,16 @@ def normalize_error_pattern(error_msg: str) -> str:
     pattern = re.sub(r':\d+', ':<PORT>', pattern)
     
     # Replace UUIDs
-    pattern = re.sub(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}', '<UUID>', pattern)
+    pattern = re.sub(r'[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}', '<UUID>', pattern)
     
     # Replace paths
     pattern = re.sub(r'/[^\s]+', '<PATH>', pattern)
     
+    # Replace hex values before standalone numbers
+    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
+    
     # Replace remaining standalone numbers
     pattern = re.sub(r'\b\d+\b', '<NUM>', pattern)
-    
-    # Replace hex values
-    pattern = re.sub(r'0x[0-9a-fA-F]+', '<HEX>', pattern)
     
     return pattern
 
@@ -143,6 +146,24 @@ def detect_log_level(line: str) -> str:
             return level
     
     return "UNKNOWN"
+
+
+def _align_timestamp_timezone(timestamp: datetime, boundary: datetime) -> tuple[datetime, datetime]:
+    if timestamp.tzinfo is None and boundary.tzinfo is not None:
+        timestamp = timestamp.replace(tzinfo=boundary.tzinfo)
+    elif timestamp.tzinfo is not None and boundary.tzinfo is None:
+        boundary = boundary.replace(tzinfo=timestamp.tzinfo)
+    return timestamp, boundary
+
+
+def _timestamp_before(timestamp: datetime, boundary: datetime) -> bool:
+    timestamp, boundary = _align_timestamp_timezone(timestamp, boundary)
+    return timestamp < boundary
+
+
+def _timestamp_after(timestamp: datetime, boundary: datetime) -> bool:
+    timestamp, boundary = _align_timestamp_timezone(timestamp, boundary)
+    return timestamp > boundary
 
 
 def filter_lines(
@@ -186,10 +207,10 @@ def filter_lines(
         
         timestamp = parse_timestamp(line)
         
-        if start_time and timestamp and timestamp < start_time:
+        if start_time and timestamp and _timestamp_before(timestamp, start_time):
             continue
-        
-        if end_time and timestamp and timestamp > end_time:
+
+        if end_time and timestamp and _timestamp_after(timestamp, end_time):
             continue
         
         yield line_num, line, timestamp, level

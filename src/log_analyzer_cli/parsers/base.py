@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
@@ -16,11 +16,7 @@ class ParsedEntry:
     level: str = "UNKNOWN"
     message: str = ""
     source: Optional[str] = None
-    metadata: dict = None
-    
-    def __post_init__(self):
-        if self.metadata is None:
-            self.metadata = {}
+    metadata: dict = field(default_factory=dict)
 
 
 class LogParser(ABC):

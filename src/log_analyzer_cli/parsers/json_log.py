@@ -54,6 +54,8 @@ class JSONLogParser(LogParser):
             data = json.loads(line.strip())
         except json.JSONDecodeError:
             return None
+        if not isinstance(data, dict):
+            return None
         
         timestamp = self._extract_timestamp(data)
         level = self._extract_level(data)

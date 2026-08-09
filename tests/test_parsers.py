@@ -77,6 +77,12 @@ class TestJSONLogParser:
         assert entry.timestamp is not None
         assert entry.level == "INFO"
         assert entry.message == "Started"
+
+    @pytest.mark.parametrize("line", ["[]", "null", "42", '"message"'])
+    def test_parse_json_scalar_root_as_missing(self, line):
+        parser = JSONLogParser()
+
+        assert parser.parse(line) is None
     
     def test_parse_json_with_numeric_timestamp(self):
         parser = JSONLogParser()

@@ -167,6 +167,16 @@ class TestApacheParser:
         assert entry.timestamp is not None
         assert entry.level == "INFO"
         assert entry.metadata["status"] == "200"
+
+    def test_parse_apache_combined_preserves_request_metadata(self):
+        parser = ApacheParser()
+        line = '192.168.1.10 - - [20/Mar/2025:10:15:32 +0000] "GET /index.html HTTP/1.1" 200 2326 "https://example.com" "Mozilla/5.0"'
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.metadata["referer"] == "https://example.com"
+        assert entry.metadata["user_agent"] == "Mozilla/5.0"
     
     def test_parse_apache_error_status(self):
         parser = ApacheParser()

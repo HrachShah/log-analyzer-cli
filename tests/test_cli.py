@@ -86,6 +86,11 @@ class TestCLI:
     def test_analyze_pattern_filter(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "-p", "database"])
         assert result.exit_code == 0
+
+    def test_analyze_rejects_invalid_pattern(self, runner, json_file):
+        result = runner.invoke(main, ["analyze", str(json_file), "-p", "["])
+        assert result.exit_code == 1
+        assert "Invalid pattern" in result.output
     
     def test_analyze_time_filter(self, runner, json_file):
         result = runner.invoke(

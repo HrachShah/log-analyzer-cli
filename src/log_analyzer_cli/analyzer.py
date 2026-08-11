@@ -57,6 +57,10 @@ class LogAnalyzer:
     """Analyzer for log files."""
     
     def __init__(self, max_error_group_samples: int = 5):
+        if not isinstance(max_error_group_samples, int) or isinstance(max_error_group_samples, bool):
+            raise TypeError("max_error_group_samples must be a non-negative integer")
+        if max_error_group_samples < 0:
+            raise ValueError("max_error_group_samples must be a non-negative integer")
         self.max_error_group_samples = max_error_group_samples
         self._error_patterns: dict[str, ErrorGroup] = {}
     

@@ -13,6 +13,15 @@ from log_analyzer_cli.parsers import ParsedEntry
 class TestLogAnalyzer:
     """Tests for LogAnalyzer."""
     
+    @pytest.mark.parametrize("value", [-1, True, 1.5, "5"])
+    def test_max_error_group_samples_rejects_invalid_values(self, value):
+        with pytest.raises((TypeError, ValueError), match="max_error_group_samples"):
+            LogAnalyzer(value)
+
+    def test_zero_error_group_samples_keeps_groups_without_samples(self):
+        result = LogAnalyzer(0).analyze([ParsedEntry(raw="failure", level="ERROR", message="failure")])
+        assert result.error_groups[0].sample_messages == []
+
     def test_analyze_empty_entries(self):
         analyzer = LogAnalyzer()
         result = analyzer.analyze([])

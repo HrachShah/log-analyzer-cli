@@ -198,7 +198,10 @@ def _parse_file(
     from log_analyzer_cli.utils import detect_log_level, parse_timestamp
     import re
     
-    compiled_pattern = re.compile(search_pattern) if search_pattern else None
+    try:
+        compiled_pattern = re.compile(search_pattern) if search_pattern else None
+    except re.error as exc:
+        raise ValueError(f"Invalid regular expression: {exc}") from exc
     
     for line in read_log_file(file_path):
         line = line.rstrip("\n\r")
@@ -214,9 +217,19 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
+        if timestamp is not None:
+            if timestamp.tzinfo is not None:
+                if start_time is not None and start_time.tzinfo is None:
+                    start_time = start_time.replace(tzinfo=timestamp.tzinfo)
+                if end_time is not None and end_time.tzinfo is None:
+                    end_time = end_time.replace(tzinfo=timestamp.tzinfo)
+            elif start_time is not None and start_time.tzinfo is not None:
+                timestamp = timestamp.replace(tzinfo=start_time.tzinfo)
+            elif end_time is not None and end_time.tzinfo is not None:
+                timestamp = timestamp.replace(tzinfo=end_time.tzinfo)
+        if start_time and (timestamp is None or timestamp < start_time):
             continue
-        if end_time and timestamp and timestamp > end_time:
+        if end_time and (timestamp is None or timestamp > end_time):
             continue
         
         parsed = parser.parse(line)

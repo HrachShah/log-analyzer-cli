@@ -22,6 +22,7 @@ def parse_timestamp(line: str) -> Optional[datetime]:
         r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?",
         r"\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}",
         r"[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}",
+        r"\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}",
     ]
     
     for pattern in timestamp_patterns:
@@ -37,11 +38,14 @@ def parse_timestamp(line: str) -> Optional[datetime]:
 def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
     """Try to parse a datetime string with various formats."""
     formats = [
-        "%Y-%m-%d %H:%M:%S.%f",
-        "%Y-%m-%dT%H:%M:%S.%f",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
         "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%dT%H:%M:%S.%f",
+        "%Y-%m-%dT%H:%M:%S",
         "%d/%b/%Y:%H:%M:%S",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
@@ -52,9 +56,10 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
     
     for fmt in formats:
         try:
-            return datetime.strptime(ts_str, fmt)
+            parsed = datetime.strptime(ts_str, fmt)
         except ValueError:
             continue
+        return parsed
     return None
 
 
@@ -167,7 +172,21 @@ def filter_lines(
         Tuples of (line_number, line, timestamp, level).
     """
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
-    
+
+    def comparable_timestamp(timestamp: Optional[datetime]) -> Optional[datetime]:
+        if timestamp is None:
+            return None
+        if timestamp.tzinfo is None:
+            if start_time is not None and start_time.tzinfo is not None:
+                return timestamp.replace(tzinfo=start_time.tzinfo)
+            if end_time is not None and end_time.tzinfo is not None:
+                return timestamp.replace(tzinfo=end_time.tzinfo)
+        elif start_time is not None and start_time.tzinfo is None:
+            return timestamp.replace(tzinfo=None)
+        elif end_time is not None and end_time.tzinfo is None:
+            return timestamp.replace(tzinfo=None)
+        return timestamp
+
     for line_num, line in enumerate(lines, 1):
         line = line.rstrip("\n\r")
         if not line:
@@ -185,11 +204,12 @@ def filter_lines(
             continue
         
         timestamp = parse_timestamp(line)
-        
-        if start_time and timestamp and timestamp < start_time:
+        comparable = comparable_timestamp(timestamp)
+
+        if start_time and (comparable is None or comparable < start_time):
             continue
-        
-        if end_time and timestamp and timestamp > end_time:
+
+        if end_time and (comparable is None or comparable > end_time):
             continue
         
         yield line_num, line, timestamp, level

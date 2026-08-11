@@ -64,12 +64,14 @@ class GenericParser(LogParser):
         year = datetime.now().year
         
         formats = [
+            ("%Y-%m-%d %H:%M:%S.%f%z", True),
+            ("%Y-%m-%dT%H:%M:%S.%f%z", True),
+            ("%Y-%m-%d %H:%M:%S%z", True),
+            ("%Y-%m-%dT%H:%M:%S%z", True),
             ("%Y-%m-%d %H:%M:%S.%f", False),
             ("%Y-%m-%dT%H:%M:%S.%f", False),
             ("%Y-%m-%d %H:%M:%S", False),
             ("%Y-%m-%dT%H:%M:%S", False),
-            ("%Y-%m-%dT%H:%M:%S.%f%z", True),
-            ("%Y-%m-%dT%H:%M:%S%z", True),
             ("%d/%b/%Y:%H:%M:%S %z", False),
             ("%d/%b/%Y:%H:%M:%S", False),
             ("%b %d %H:%M:%S", False),

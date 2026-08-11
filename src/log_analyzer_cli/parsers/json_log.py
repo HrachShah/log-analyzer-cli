@@ -78,9 +78,9 @@ class JSONLogParser(LogParser):
             if field in data:
                 value = data[field]
                 if isinstance(value, (int, float)) and not isinstance(value, bool):
-                    timestamp = value / 1000 if value > 1e12 else value
                     try:
-                        return datetime.fromtimestamp(timestamp)
+                        timestamp = value / 1000 if value > 1e12 else value
+                        return datetime.fromtimestamp(timestamp, tz=timezone.utc)
                     except (OverflowError, OSError, ValueError):
                         return None
                 if isinstance(value, str):
@@ -92,6 +92,8 @@ class JSONLogParser(LogParser):
         formats = [
             "%Y-%m-%dT%H:%M:%S.%f%z",
             "%Y-%m-%dT%H:%M:%S%z",
+            "%Y-%m-%d %H:%M:%S.%f%z",
+            "%Y-%m-%d %H:%M:%S%z",
             "%Y-%m-%dT%H:%M:%S.%f",
             "%Y-%m-%dT%H:%M:%S",
             "%Y-%m-%d %H:%M:%S.%f",
@@ -104,13 +106,15 @@ class JSONLogParser(LogParser):
         
         for fmt in formats:
             try:
-                return datetime.strptime(ts_str, fmt)
+                parsed = datetime.strptime(ts_str, fmt)
+                return parsed.astimezone(timezone.utc) if parsed.tzinfo else parsed
             except ValueError:
                 continue
         
         ts_str_clean = re.sub(r'\.\d+Z$', '+00:00', ts_str)
         try:
-            return datetime.fromisoformat(ts_str_clean.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(ts_str_clean.replace("Z", "+00:00"))
+            return parsed.astimezone(timezone.utc) if parsed.tzinfo else parsed
         except ValueError:
             pass
         

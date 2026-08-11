@@ -73,6 +73,16 @@ class TestCLI:
         result = runner.invoke(main, ["analyze", str(json_file), "-l", "ERROR,WARNING"])
         assert result.exit_code == 0
     
+    def test_analyze_level_filter_uses_apache_status_level(self, runner, apache_file):
+        result = runner.invoke(
+            main, ["analyze", str(apache_file), "-f", "apache", "-l", "WARNING", "-o", "json"]
+        )
+
+        assert result.exit_code == 0
+        assert '"parsed_entries": 2' in result.output
+        assert '"ERROR"' not in result.output
+        assert '"WARNING": 2' in result.output
+
     def test_analyze_pattern_filter(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "-p", "database"])
         assert result.exit_code == 0

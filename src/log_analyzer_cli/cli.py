@@ -227,17 +227,17 @@ def _parse_file(
         if not line:
             continue
         
-        if include_levels:
-            level = detect_log_level(line)
-            if level not in include_levels:
-                continue
-        
         if compiled_pattern and not compiled_pattern.search(line):
             continue
         
         parsed = parser.parse(line)
         if not parsed:
             continue
+
+        if include_levels:
+            level = parsed.level or detect_log_level(line)
+            if level not in include_levels:
+                continue
 
         timestamp = parsed.timestamp or parse_timestamp(line)
         if start_time and timestamp and _timestamp_before(timestamp, start_time):

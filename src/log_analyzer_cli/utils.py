@@ -20,7 +20,9 @@ def parse_timestamp(line: str) -> Optional[datetime]:
     """
     timestamp_patterns = [
         r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?",
-        r"\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}",
+        # Apache common log: "10/Oct/2025:13:55:36 -0700". The offset
+        # (with or without colon) is optional.
+        r"\d{2}/[A-Za-z]{3}/\d{4}:\d{2}:\d{2}:\d{2}(?:\s+[+-]\d{2}:?\d{2})?",
         r"[A-Za-z]{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}",
     ]
     
@@ -35,15 +37,32 @@ def parse_timestamp(line: str) -> Optional[datetime]:
 
 
 def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
-    """Try to parse a datetime string with various formats."""
+    """Try to parse a datetime string with various formats.
+
+    The list is ordered from most specific to least specific so that a timestamp
+    with microseconds and a timezone is matched before a coarser format that
+    would silently drop the timezone or truncate the fractional seconds.
+    """
     formats = [
-        "%Y-%m-%d %H:%M:%S.%f",
-        "%Y-%m-%dT%H:%M:%S.%f",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S",
+        # ISO 8601 with fractional seconds, with timezone (Python's isoformat()
+        # with default timespec='auto' or 'microseconds' emits these).
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d %H:%M:%S.%f%z",
+        # ISO 8601 with timezone, no fractional seconds.
         "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%d %H:%M:%S%z",
+        # ISO 8601 with fractional seconds, no timezone.
+        "%Y-%m-%dT%H:%M:%S.%f",
+        "%Y-%m-%d %H:%M:%S.%f",
+        # ISO 8601 with no fractional seconds, no timezone.
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+        # Apache common log format (with optional timezone).
+        "%d/%b/%Y:%H:%M:%S %z",
         "%d/%b/%Y:%H:%M:%S",
+        # Syslog (no year).
         "%b %d %H:%M:%S",
+        # Slash-separated date, no timezone.
         "%Y/%m/%d %H:%M:%S",
     ]
     

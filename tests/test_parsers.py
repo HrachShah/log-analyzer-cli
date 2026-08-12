@@ -11,6 +11,7 @@ from log_analyzer_cli.parsers import (
     ApacheParser,
     get_parser_for_format,
 )
+from log_analyzer_cli.utils import _try_parse_datetime
 
 
 class TestSyslogParser:
@@ -179,3 +180,58 @@ class TestParserUtils:
     def test_get_parser_for_format_invalid(self):
         parser_class = get_parser_for_format("invalid_format")
         assert parser_class is None
+
+
+
+class TestTryParseDatetime:
+    """Tests for log_analyzer_cli.utils._try_parse_datetime.
+
+    These cover the formats that the JSON emitter in examples/app-json.log
+    and the Apache CLF timestamp parser both produce — most importantly the
+    fractional-seconds + tz-aware combination (".123+00:00") that the old
+    format list missed, which crashed ``analyze --start-time`` with
+    ``TypeError: can't compare offset-naive and offset-aware datetimes``.
+    """
+
+    def test_zulu_with_milliseconds_is_tz_aware(self):
+        ts = _try_parse_datetime("2025-03-20T10:15:32.123Z")
+        assert ts is not None
+        assert ts.tzinfo is not None
+        assert ts.microsecond == 123000
+
+    def test_iso8601_with_milliseconds_and_offset(self):
+        ts = _try_parse_datetime("2025-03-20T10:15:32.123+00:00")
+        assert ts is not None
+        assert ts.tzinfo is not None
+        assert ts.microsecond == 123000
+
+    def test_iso8601_with_milliseconds_naive(self):
+        ts = _try_parse_datetime("2025-03-20T10:15:32.123")
+        assert ts is not None
+        assert ts.tzinfo is None
+        assert ts.microsecond == 123000
+
+    def test_iso8601_zulu_no_milliseconds(self):
+        ts = _try_parse_datetime("2025-03-20T10:15:32Z")
+        assert ts is not None
+        assert ts.tzinfo is not None
+
+    def test_iso8601_with_offset_no_milliseconds(self):
+        ts = _try_parse_datetime("2025-03-20T10:15:32+00:00")
+        assert ts is not None
+        assert ts.tzinfo is not None
+
+    def test_space_separator_with_milliseconds_and_offset(self):
+        ts = _try_parse_datetime("2025-03-20 10:15:32.123+00:00")
+        assert ts is not None
+        assert ts.tzinfo is not None
+        assert ts.microsecond == 123000
+
+    def test_apache_clf(self):
+        ts = _try_parse_datetime("20/Mar/2025:10:15:32")
+        assert ts is not None
+        assert ts.tzinfo is None
+        assert ts.day == 20 and ts.month == 3 and ts.year == 2025
+
+    def test_unparseable_returns_none(self):
+        assert _try_parse_datetime("not a date") is None

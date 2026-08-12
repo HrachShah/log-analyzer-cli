@@ -179,8 +179,26 @@ def _get_parser(format_name: str, file_path: Path):
         for line in sample_lines[:5]:
             if parser.can_parse(line):
                 return parser
-    
+
     return GenericParser()
+
+
+def _coerce_tz(bound: datetime, other: datetime) -> datetime:
+    """Return ``bound`` with the same tz-awareness as ``other``.
+
+    Python refuses to compare a naive datetime with a tz-aware one
+    (``TypeError: can't compare offset-naive and offset-aware datetimes``).
+    The user almost always means "UTC for the side that does not specify
+    a timezone" — picking UTC as the common base is the convention that
+    matches the ``Z`` suffix in ISO 8601 log lines, the ``+00:00`` offset
+    most JSON emitters default to, and the way the rest of the analyzer
+    treats a missing tz.
+    """
+    if bound.tzinfo is None and other.tzinfo is not None:
+        return bound.replace(tzinfo=other.tzinfo)
+    if bound.tzinfo is not None and other.tzinfo is None:
+        return bound.replace(tzinfo=None)
+    return bound
 
 
 def _parse_file(
@@ -214,9 +232,13 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
+        # If only one side has a tzinfo, treat the naive side as UTC so the
+        # comparison does not crash with "can't compare offset-naive and
+        # offset-aware datetimes" when the user passes --start-time on a
+        # log file that has timezone-aware ISO 8601 timestamps (or vice versa).
+        if start_time and timestamp and timestamp < _coerce_tz(start_time, timestamp):
             continue
-        if end_time and timestamp and timestamp > end_time:
+        if end_time and timestamp and timestamp > _coerce_tz(end_time, timestamp):
             continue
         
         parsed = parser.parse(line)

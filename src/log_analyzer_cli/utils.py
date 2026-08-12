@@ -35,21 +35,35 @@ def parse_timestamp(line: str) -> Optional[datetime]:
 
 
 def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
-    """Try to parse a datetime string with various formats."""
+    """Try to parse a datetime string with various formats.
+
+    The millisecond+fractional+timezone forms appear before the plain
+    second+timezone forms so the latter can pick up the trailing
+    timezone offset. Each millisecond variant also has a plain
+    fractional-seconds sibling without %z for naive datetimes.
+    """
     formats = [
+        # Milliseconds + timezone (ISO 8601 with offset, e.g. ".123+00:00")
+        "%Y-%m-%d %H:%M:%S.%f%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        # Seconds + timezone (ISO 8601 with offset, e.g. "+00:00")
+        "%Y-%m-%d %H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S%z",
+        # Naive millisecond variants (no timezone in the string)
         "%Y-%m-%d %H:%M:%S.%f",
         "%Y-%m-%dT%H:%M:%S.%f",
+        # Naive second variants (no timezone in the string)
         "%Y-%m-%d %H:%M:%S",
         "%Y-%m-%dT%H:%M:%S",
-        "%Y-%m-%dT%H:%M:%S%z",
+        # Other common shapes (no timezone expected)
         "%d/%b/%Y:%H:%M:%S",
         "%b %d %H:%M:%S",
         "%Y/%m/%d %H:%M:%S",
     ]
-    
+
     if ts_str.endswith("Z"):
         ts_str = ts_str[:-1] + "+00:00"
-    
+
     for fmt in formats:
         try:
             return datetime.strptime(ts_str, fmt)

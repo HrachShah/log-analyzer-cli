@@ -41,8 +41,12 @@ class GenericParser(LogParser):
             return None
         
         timestamp = self._parse_timestamp(match.group("timestamp"))
-        level = detect_log_level(line)
-        
+        # Detect the level from the message portion only; scanning the
+        # full line picks up words like "error" that appear inside the
+        # timestamp, hostname, or process name and misclassifies an
+        # otherwise clean WARNING line as ERROR. The extracted message
+        # starts right after the timestamp and is what the user
+        # actually thinks of as the log entry's content.
         message_start = match.end()
         message = line[message_start:].strip()
         
@@ -51,7 +55,7 @@ class GenericParser(LogParser):
         return ParsedEntry(
             raw=line,
             timestamp=timestamp,
-            level=level,
+            level=detect_log_level(message),
             message=message,
             metadata={"format": "generic"},
         )

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from log_analyzer_cli.parsers import (
@@ -81,6 +83,16 @@ class TestJSONLogParser:
         
         assert entry is not None
         assert entry.level == "ERROR"
+
+    @pytest.mark.parametrize("timestamp", [10**100, -(10**100), float("inf")])
+    def test_parse_json_ignores_unrepresentable_numeric_timestamp(self, timestamp):
+        parser = JSONLogParser()
+        line = json.dumps({"timestamp": timestamp, "level": "INFO", "message": "Started"})
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None
+        assert entry.message == "Started"
     
     def test_parse_json_various_level_names(self):
         parser = JSONLogParser()

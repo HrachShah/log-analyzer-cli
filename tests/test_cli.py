@@ -151,3 +151,21 @@ class TestCLI:
 
         assert result.exit_code == 1
         assert "start-time must not be later than end-time" in result.output
+
+
+def test_analyze_level_filter_falls_back_to_raw_json_text_for_unknown_levels(tmp_path):
+    log_file = tmp_path / "unknown-level.jsonl"
+    log_file.write_text(
+        '{"message": "request failed", "context": "ERROR"}\n'
+        '{"message": "request completed", "context": "INFO"}\n'
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        ["analyze", str(log_file), "-f", "json", "-l", "ERROR", "-o", "json"],
+    )
+
+    assert result.exit_code == 0
+    assert '"parsed_entries": 1' in result.output
+    assert '"ERROR": 1' in result.output

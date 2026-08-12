@@ -238,6 +238,9 @@ def _parse_file(
 
         if include_levels:
             level = parsed.level or detect_log_level(line)
+            if level == "UNKNOWN":
+                level = detect_log_level(line)
+                parsed.level = level
             if level not in include_levels:
                 continue
 

@@ -214,10 +214,15 @@ def _parse_file(
             continue
         
         timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
-            continue
-        if end_time and timestamp and timestamp > end_time:
-            continue
+        if start_time or end_time:
+            # Normalize a tz-aware timestamp to naive so a naive --start-time/--end-time
+            # bound can be compared against log entries with a UTC offset, while
+            # preserving the existing behavior for tz-naive entries.
+            compare_ts = timestamp.replace(tzinfo=None) if (timestamp and timestamp.tzinfo) else timestamp
+            if start_time and compare_ts and compare_ts < start_time:
+                continue
+            if end_time and compare_ts and compare_ts > end_time:
+                continue
         
         parsed = parser.parse(line)
         if parsed:

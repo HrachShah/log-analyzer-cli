@@ -145,5 +145,11 @@ Thumbs.db
 # Keep test fixtures in examples/ unignored:
 # First, un-ignore the examples/ directory
 !examples/
-# Then re-ignore *.log files inside it (they would otherwise be unignored too)
+# Re-add the fixture logs that tests/conftest.py fixtures point at so
+# `pytest` finds them in a fresh checkout and test_analyze_apache_file,
+# test_analyze_mixed_file, etc. don't fail with Click bad-path exit 2.
+!examples/apache-sample.log
+!examples/mixed.log
+# Other *.log files inside examples/ are not tracked fixtures and can
+# still be ignored so ad-hoc files don't get committed by accident.
 examples/*.log

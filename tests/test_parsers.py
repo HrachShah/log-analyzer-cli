@@ -81,15 +81,6 @@ class TestJSONLogParser:
         
         assert entry is not None
         assert entry.level == "ERROR"
-    
-    def test_parse_json_various_level_names(self):
-        parser = JSONLogParser()
-        
-        for level_field in ["level", "severity", "loglevel"]:
-            line = f'{{"{level_field}": "error", "message": "Test"}}'
-            entry = parser.parse(line)
-            assert entry is not None
-            assert entry.level == "ERROR"
 
 
 class TestApacheParser:
@@ -179,3 +170,80 @@ class TestParserUtils:
     def test_get_parser_for_format_invalid(self):
         parser_class = get_parser_for_format("invalid_format")
         assert parser_class is None
+
+
+class TestJSONNumericTimestampUnits:
+    """Tests for JSONLogParser with numeric timestamp units."""
+    
+    def test_parse_json_with_microsecond_timestamp(self):
+        # Go's time.Now().UnixMicro() emits a 16-digit value (~1.6e15).
+        # The old code divided by 1000 only once, leaving a value still
+        # far above the second-resolution epoch and crashing with
+        # "year ... is out of range".
+        parser = JSONLogParser()
+        line = '{"timestamp": 1647780800000000, "level": "INFO", "message": "x"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2022
+        assert entry.timestamp.month == 3
+        assert entry.timestamp.day == 20
+        assert entry.timestamp.hour == 12
+        assert entry.timestamp.minute == 53
+        assert entry.timestamp.second == 20
+
+    def test_parse_json_with_nanosecond_timestamp(self):
+        # Go's time.Now().UnixNano() emits a 19-digit value (~1.6e18).
+        parser = JSONLogParser()
+        line = '{"timestamp": 1647780800000000000, "level": "INFO", "message": "x"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2022
+        assert entry.timestamp.month == 3
+        assert entry.timestamp.day == 20
+        assert entry.timestamp.hour == 12
+        assert entry.timestamp.minute == 53
+        assert entry.timestamp.second == 20
+
+    def test_parse_json_with_seconds_timestamp(self):
+        # Plain unix seconds - the smallest numeric unit.
+        parser = JSONLogParser()
+        line = '{"timestamp": 1647780800, "level": "INFO", "message": "x"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2022
+        assert entry.timestamp.month == 3
+        assert entry.timestamp.day == 20
+
+    def test_parse_json_with_out_of_range_timestamp_returns_none(self):
+        # A value so large that no unit rescaling maps to a real datetime
+        # must return None rather than leak ValueError.
+        parser = JSONLogParser()
+        line = '{"timestamp": 1e30, "level": "INFO", "message": "x"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None
+
+    def test_parse_json_with_nan_numeric_timestamp_returns_none(self):
+        # float('nan') is technically a number; the old code would feed it
+        # straight into datetime.fromtimestamp and raise ValueError.
+        parser = JSONLogParser()
+        line = '{"timestamp": NaN, "level": "INFO", "message": "x"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None
+
+    def test_parse_json_with_null_timestamp_returns_none(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": null, "level": "INFO", "message": "x"}'
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is None

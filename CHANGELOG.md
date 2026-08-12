@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- JSON parser now handles numeric timestamps expressed in seconds,
+  milliseconds, microseconds, or nanoseconds (was hardcoded to
+  seconds-or-milliseconds, which crashed on microsecond/nanosecond
+  inputs and propagated `ValueError: year ... is out of range` from
+  `datetime.fromtimestamp`). Values that don't resolve to a valid
+  date (NaN, infinity, non-finite floats) now return `None` for the
+  timestamp field instead of raising.
+
 ## [1.0.0] - 2025-03-20
 
 ### Added

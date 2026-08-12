@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Optional
+from datetime import timezone
 
 import click
 
@@ -104,6 +105,7 @@ def analyze(
             except ValueError:
                 click.echo(f"Error: Invalid start-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
         
         end_dt = None
         if end_time:
@@ -112,6 +114,7 @@ def analyze(
             except ValueError:
                 click.echo(f"Error: Invalid end-time format. Use YYYY-MM-DD HH:MM:SS", err=True)
                 sys.exit(1)
+            end_dt = end_dt.replace(tzinfo=timezone.utc)
         
         parser = _get_parser(log_format, file)
         
@@ -191,38 +194,48 @@ def _parse_file(
     start_time: Optional[datetime] = None,
     end_time: Optional[datetime] = None,
 ):
-    """Parse log file with optional filtering."""
+    """Parse log file with optional filtering.
+
+    Level filtering and time filtering both operate on the *parsed* entry
+    rather than the raw line. Filtering on the raw line's text (via
+    ``detect_log_level``) can disagree with the level the parser actually
+    assigns — e.g. an Apache 200 response with the word "ERROR" in the
+    User-Agent string is ``INFO`` per the parser (200 status) but
+    ``ERROR`` per the raw-text scan, while an Apache 500 response with
+    no level keyword in the line is ``ERROR`` per the parser but
+    ``UNKNOWN`` per the raw-text scan. Parsing first means the level and
+    timestamp filter against the same values the analyzer will use.
+    """
     entries = []
-    
+
     from log_analyzer_cli.parsers import ParsedEntry
     from log_analyzer_cli.utils import detect_log_level, parse_timestamp
     import re
-    
+
     compiled_pattern = re.compile(search_pattern) if search_pattern else None
-    
+
     for line in read_log_file(file_path):
         line = line.rstrip("\n\r")
         if not line:
             continue
-        
-        if include_levels:
-            level = detect_log_level(line)
-            if level not in include_levels:
-                continue
-        
+
         if compiled_pattern and not compiled_pattern.search(line):
             continue
-        
-        timestamp = parse_timestamp(line)
-        if start_time and timestamp and timestamp < start_time:
-            continue
-        if end_time and timestamp and timestamp > end_time:
-            continue
-        
+
         parsed = parser.parse(line)
-        if parsed:
-            entries.append(parsed)
-    
+        if not parsed:
+            continue
+
+        if include_levels and parsed.level not in include_levels:
+            continue
+
+        if start_time and parsed.timestamp and parsed.timestamp < start_time:
+            continue
+        if end_time and parsed.timestamp and parsed.timestamp > end_time:
+            continue
+
+        entries.append(parsed)
+
     return entries
 
 

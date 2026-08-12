@@ -84,6 +84,17 @@ class TestJSONLogParser:
 
         assert parser.parse(line) is None
     
+    def test_parse_json_uses_next_timestamp_field_when_first_is_invalid(self):
+        parser = JSONLogParser()
+        line = '{"timestamp": "not-a-timestamp", "time": "2025-03-20T10:15:32Z", "message": "Started"}'
+
+        entry = parser.parse(line)
+
+        assert entry is not None
+        assert entry.timestamp is not None
+        assert entry.timestamp.year == 2025
+        assert entry.timestamp.second == 32
+
     def test_parse_json_with_numeric_timestamp(self):
         parser = JSONLogParser()
         line = '{"timestamp": 1647780800000, "level": "ERROR", "message": "Failed"}'

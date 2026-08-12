@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from log_analyzer_cli.parsers.base import LogParser, ParsedEntry
@@ -24,13 +24,12 @@ class ApacheParser(LogParser):
     COMBINED_PATTERN = re.compile(
         r'^(?P<host>\S+)\s+'
         r'(?P<ident>\S+)\s+'
-        r'(?P<user>\s+)'
+        r'(?P<user>\S+)\s+'
         r'\[(?P<timestamp>[^\]]+)\]\s+'
         r'"(?P<request>[^"]+)"\s+'
         r'(?P<status>\d{3})\s+'
         r'(?P<size>\S+)'
         r'(?:\s+"(?P<referer>[^"]+)"\s+"(?P<user_agent>[^"]+)")?'
-        r'.*$'
     )
     
     COMMON_PATTERN = re.compile(
@@ -116,7 +115,8 @@ class ApacheParser(LogParser):
         
         try:
             ts_str_naive = ts_str.split()[0]
-            return datetime.strptime(ts_str_naive, "%d/%b/%Y:%H:%M:%S")
+            dt = datetime.strptime(ts_str_naive, "%d/%b/%Y:%H:%M:%S")
+            return dt.replace(tzinfo=timezone.utc)
         except ValueError:
             pass
         

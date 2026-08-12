@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from datetime import datetime
 from typing import Optional
@@ -71,14 +72,36 @@ class JSONLogParser(LogParser):
         )
     
     def _extract_timestamp(self, data: dict) -> Optional[datetime]:
-        """Extract timestamp from JSON data."""
+        """Extract timestamp from JSON data.
+
+        Numeric timestamps are clamped to ``None`` when the value is
+        not a real, in-range epoch second: ``math.isfinite`` rejects
+        NaN, +inf, and -inf (any of which JSON.parse accepts and
+        returns as Python float), and ``try/except`` around
+        ``datetime.fromtimestamp`` rejects values that parse as finite
+        but still fall outside the platform's time_t range (e.g. a
+        metric-forwarder that pushes microsecond millis as a raw
+        ``1e18`` and would otherwise raise OverflowError, dropping the
+        rest of the log line). The string branch is left untouched —
+        ``strptime`` already returns None for unrecognised formats.
+        """
         for field in self.TIMESTAMP_FIELDS:
             if field in data:
                 value = data[field]
+                if isinstance(value, bool):
+                    # bool is an int subclass; refuse it explicitly so
+                    # a ``"timestamp": true`` JSON payload doesn't
+                    # silently become epoch second 1.
+                    continue
                 if isinstance(value, (int, float)):
-                    if value > 1e12:
-                        return datetime.fromtimestamp(value / 1000)
-                    return datetime.fromtimestamp(value)
+                    if not math.isfinite(value):
+                        continue
+                    try:
+                        if value > 1e12:
+                            return datetime.fromtimestamp(value / 1000)
+                        return datetime.fromtimestamp(value)
+                    except (OverflowError, ValueError, OSError):
+                        continue
                 if isinstance(value, str):
                     return self._parse_timestamp_string(value)
         return None

@@ -113,7 +113,7 @@ class SyslogParser(LogParser):
         """Parse syslog timestamp."""
         if not ts_str:
             return None
-        
+
         year = datetime.now().year
         formats = [
             "%b %d %H:%M:%S",
@@ -121,14 +121,13 @@ class SyslogParser(LogParser):
             "%Y-%m-%dT%H:%M:%S.%f",
             "%Y-%m-%dT%H:%M:%S%z",
         ]
-        
+
         for fmt in formats:
             try:
+                dt = datetime.strptime(ts_str, fmt)
                 if fmt == "%b %d %H:%M:%S":
-                    dt = datetime.strptime(ts_str, fmt)
                     dt = dt.replace(year=year)
-                    return dt
-                return datetime.strptime(ts_str, fmt)
+                return dt
             except ValueError:
                 continue
         return None

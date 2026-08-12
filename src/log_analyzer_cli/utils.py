@@ -50,11 +50,32 @@ def _try_parse_datetime(ts_str: str) -> Optional[datetime]:
     if ts_str.endswith("Z"):
         ts_str = ts_str[:-1] + "+00:00"
     
-    for fmt in formats:
+    for i, fmt in enumerate(formats):
         try:
-            return datetime.strptime(ts_str, fmt)
+            parsed = datetime.strptime(ts_str, fmt)
         except ValueError:
             continue
+        # The "%b %d %H:%M:%S" format (syslog-style "Jan 15 10:30:45") has no
+        # year, so datetime.strptime fills in 1900 as the default. Re-parse
+        # the same string with the current year prepended so the resulting
+        # timestamp is anchored to when the log was actually generated. This
+        # matches the convention used by Python's logging module and most
+        # production syslog parsers; the previous code returned 1900 dates,
+        # which then propagated through analyze() into
+        # first_seen/last_seen/TimeDistribution and made the time-series
+        # reports show every syslog entry grouped into a single 1900 bucket
+        # with no way for the user to tell the year was missing.
+        if i == 6 and parsed.year == 1900:
+            # Anchor the timestamp to the current year so the date isn't
+            # January 1, 1900
+            try:
+                current_year = datetime.now().year
+                return datetime.strptime(
+                    f"{current_year} {ts_str}", "%Y %b %d %H:%M:%S"
+                )
+            except ValueError:
+                return parsed
+        return parsed
     return None
 
 

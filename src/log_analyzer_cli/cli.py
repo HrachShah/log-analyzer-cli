@@ -165,26 +165,32 @@ def _get_parser(format_name: str, file_path: Path):
     
     sample_lines = []
     try:
-        with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-            for i, line in enumerate(f):
-                if i >= 10:
-                    break
-                line = line.strip()
-                if line:
-                    sample_lines.append(line)
+        for i, line in enumerate(read_log_file(file_path)):
+            if i >= 10:
+                break
+            line = line.strip()
+            if line:
+                sample_lines.append(line)
     except OSError as e:
         click.echo(f"Warning: Could not read file: {e}", err=True)
         return None
     
     if not sample_lines:
         return None
-    
+
+    candidates = sample_lines[:5]
+    scored_parsers = []
     for parser_class in get_all_parsers():
         parser = parser_class()
-        for line in sample_lines[:5]:
-            if parser.can_parse(line):
-                return parser
-    
+        score = sum(parser.can_parse(line) for line in candidates)
+        if score:
+            scored_parsers.append((score, parser))
+
+    if scored_parsers:
+        best_score, best_parser = max(scored_parsers, key=lambda item: item[0])
+        if best_score >= (len(candidates) + 1) // 2:
+            return best_parser
+
     return GenericParser()
 
 

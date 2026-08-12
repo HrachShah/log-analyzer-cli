@@ -128,6 +128,56 @@ class TestCLI:
     def test_analyze_auto_format_detection(self, runner, json_file):
         result = runner.invoke(main, ["analyze", str(json_file), "--format", "auto"])
         assert result.exit_code == 0
+
+    def test_auto_detection_keeps_majority_format_when_one_sample_is_invalid(self, runner, tmp_path):
+        log_file = tmp_path / "partly-invalid.jsonl"
+        log_file.write_text(
+            '{"timestamp": "2025-03-20T10:00:00Z", "level": "INFO", "message": "one"}\n'
+            'not valid json\n'
+            '{"timestamp": "2025-03-20T10:01:00Z", "level": "ERROR", "message": "two"}\n'
+        )
+
+        result = runner.invoke(main, ["analyze", str(log_file), "--format", "auto", "-o", "json"])
+
+        assert result.exit_code == 0
+        assert '"parsed_entries": 2' in result.output
+
+    def test_auto_format_detection_reads_gzip_files(self, runner, tmp_path):
+        import gzip
+
+        log_file = tmp_path / "events.jsonl.gz"
+        with gzip.open(log_file, "wt", encoding="utf-8") as stream:
+            stream.write('{"level": "INFO", "message": "started"}\n')
+
+        result = runner.invoke(main, ["analyze", str(log_file)])
+
+        assert result.exit_code == 0
+        assert "LOG ANALYSIS REPORT" in result.output
+
+    def test_auto_detection_keeps_majority_format_when_one_sample_is_invalid(self, runner, tmp_path):
+        log_file = tmp_path / "partly-invalid.jsonl"
+        log_file.write_text(
+            '{"timestamp": "2025-03-20T10:00:00Z", "level": "INFO", "message": "one"}\n'
+            'not valid json\n'
+            '{"timestamp": "2025-03-20T10:01:00Z", "level": "ERROR", "message": "two"}\n'
+        )
+
+        result = runner.invoke(main, ["analyze", str(log_file), "--format", "auto", "-o", "json"])
+
+        assert result.exit_code == 0
+        assert '"parsed_entries": 2' in result.output
+
+    def test_auto_format_detection_reads_gzip_files(self, runner, tmp_path):
+        import gzip
+
+        log_file = tmp_path / "events.jsonl.gz"
+        with gzip.open(log_file, "wt", encoding="utf-8") as stream:
+            stream.write('{"level": "INFO", "message": "started"}\n')
+
+        result = runner.invoke(main, ["analyze", str(log_file)])
+
+        assert result.exit_code == 0
+        assert "LOG ANALYSIS REPORT" in result.output
     
     def test_help(self, runner):
         result = runner.invoke(main, ["--help"])
